@@ -59,16 +59,16 @@ Request path: team app → Envoy Gateway → LiteLLM (team key, anonymization, r
 Not runnable yet. The target is one command that creates the local k3d cluster and deploys everything through ArgoCD:
 
 ```bash
-make up     # k3d cluster + ArgoCD + every app
-make test
-make down
+just up     # k3d cluster + ArgoCD + every app
+just test
+just down
 ```
 
-To contribute today, install the git hooks (requires [pre-commit](https://pre-commit.com/)):
+To contribute today, install the git hooks (requires [just](https://just.systems/) and [pre-commit](https://pre-commit.com/)):
 
 ```bash
-make hooks
-make lint
+just hooks
+just lint
 ```
 
 ## Roadmap

@@ -1,5 +1,5 @@
-# Install once: make hooks
-# Run on every file: make lint
+# Install once: just hooks
+# Run on every file: just lint
 default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
