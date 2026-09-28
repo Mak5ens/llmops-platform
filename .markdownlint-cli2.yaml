@@ -1,0 +1,5 @@
+config:
+  # Prose is wrapped by sentence, not at 80 columns.
+  MD013: false
+  # Allow inline HTML for centered badges and <details>.
+  MD033: false
