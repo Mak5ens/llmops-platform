@@ -6,10 +6,13 @@ This repo holds the **cross-cutting ADRs** of the whole platform. ADRs that only
 
 | ADR | Decision | Status |
 | -- | -- | -- |
-| ADR-001 | GitHub and GitHub Actions rather than GitLab CI | To write |
-| ADR-002 | Scaleway rather than OVHcloud | To write |
-| ADR-003 | Terraform rather than OpenTofu | To write |
-| ADR-004 | RabbitMQ rather than Redis Streams or NATS JetStream | To write |
-| ADR-005 | Gateway API with Envoy Gateway | To write |
-| ADR-006 | Self-hosted Langfuse rather than Langfuse Cloud | To write |
-| ADR-010 | Several repos rather than a monorepo | To write |
+| [ADR-001](001-github-and-github-actions.md) | GitHub and GitHub Actions rather than GitLab CI | Accepted |
+| [ADR-002](002-scaleway.md) | Scaleway rather than OVHcloud | Accepted |
+| [ADR-003](003-terraform.md) | Terraform rather than OpenTofu | Accepted |
+| [ADR-004](004-rabbitmq.md) | RabbitMQ rather than Redis Streams or NATS JetStream | Accepted |
+| [ADR-005](005-gateway-api-and-envoy-gateway.md) | Gateway API with Envoy Gateway | Accepted |
+| [ADR-006](006-self-hosted-langfuse.md) | Self-hosted Langfuse rather than Langfuse Cloud | Accepted |
+| [ADR-010](010-multi-repo.md) | Several repos rather than a monorepo | Accepted |
+
+ADR numbers are global to the portfolio: a number used in one repo is never reused in another.
+Repo-specific ADRs so far: [ADR-014](https://github.com/Mak5ens/llmops-gateway/blob/main/docs/adr/014-internal-price-for-self-hosted-models.md) in `llmops-gateway` (internal price per token for self-hosted models).
