@@ -15,4 +15,9 @@ This repo holds the **cross-cutting ADRs** of the whole platform. ADRs that only
 | [ADR-010](010-multi-repo.md) | Several repos rather than a monorepo | Accepted |
 
 ADR numbers are global to the portfolio: a number used in one repo is never reused in another.
-Repo-specific ADRs so far: [ADR-014](https://github.com/Mak5ens/llmops-gateway/blob/main/docs/adr/014-internal-price-for-self-hosted-models.md) in `llmops-gateway` (internal price per token for self-hosted models).
+Repo-specific ADRs so far, all in `llmops-gateway`:
+
+- [ADR-007](https://github.com/Mak5ens/llmops-gateway/blob/main/docs/adr/007-litellm-as-llm-gateway.md): LiteLLM Proxy as the LLM gateway, rather than our own, Envoy AI Gateway, Kong or a SaaS;
+- [ADR-014](https://github.com/Mak5ens/llmops-gateway/blob/main/docs/adr/014-internal-price-for-self-hosted-models.md): internal price per token for self-hosted models;
+- [ADR-015](https://github.com/Mak5ens/llmops-gateway/blob/main/docs/adr/015-presidio-marker-fixes.md): fix the numbered markers of LiteLLM's Presidio guardrail in a subclass;
+- [ADR-016](https://github.com/Mak5ens/llmops-gateway/blob/main/docs/adr/016-langfuse-project-per-team.md): one Langfuse organization per team, provisioned in Langfuse's database.

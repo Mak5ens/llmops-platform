@@ -29,5 +29,5 @@ LiteLLM stays the LLM gateway, behind Envoy Gateway: each tool does the job it i
 
 - Routes are `HTTPRoute` resources in Git, reviewed like any other change; no Ingress resource in the platform.
 - Rate limiting per team stays in LiteLLM (budgets and tokens); Envoy Gateway only protects the edge (TLS, request size, global limits).
-- We do not use Envoy AI Gateway for now: it overlaps with LiteLLM, compared in ADR-007.
+- We do not use Envoy AI Gateway (renamed Agent Router in 2026) for now: it overlaps with LiteLLM, compared in [ADR-007](https://github.com/Mak5ens/llmops-gateway/blob/main/docs/adr/007-litellm-as-llm-gateway.md).
 - We revisit this if Envoy Gateway falls behind the Gateway API conformance reports, or if the platform adopts a service mesh with its own gateway.
