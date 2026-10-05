@@ -1,0 +1,38 @@
+# Local cluster, created by `just cluster-up` and deleted by `just cluster-down` (ADR-017).
+# The only k3d-specific file with those two recipes: everything deployed on the cluster
+# must also run on minikube, a k3s server or Kapsule.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: llmops
+# One server and two agents, so that spreading and node failure can be tested as on Kapsule.
+servers: 1
+agents: 2
+# Same Kubernetes minor version as the Kapsule cluster (1.37, available on Kapsule since August 26, 2026).
+image: rancher/k3s:v1.37.1-k3s1
+ports:
+  # HTTP and HTTPS of Envoy Gateway, through the k3d load balancer, on localhost only.
+  - port: 127.0.0.1:80:80
+    nodeFilters: [loadbalancer]
+  - port: 127.0.0.1:443:443
+    nodeFilters: [loadbalancer]
+registries:
+  # For images built on this machine only; the platform pulls its images from GHCR.
+  # Push to localhost:5050/<image>, reference registry.localhost:5050/<image> in the cluster.
+  create:
+    name: registry.localhost
+    host: 127.0.0.1
+    hostPort: "5050"
+options:
+  k3d:
+    wait: true
+    timeout: 180s
+  k3s:
+    extraArgs:
+      # Exposure goes through Envoy Gateway (ADR-005), not the Traefik bundled with k3s.
+      - arg: --disable=traefik
+        nodeFilters: [server:*]
+  kubeconfig:
+    # Adds the k3d-llmops context without making it current: scripts always pass their context explicitly.
+    updateDefaultKubeconfig: true
+    switchCurrentContext: false
