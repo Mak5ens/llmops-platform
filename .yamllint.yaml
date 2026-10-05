@@ -1,5 +1,9 @@
 extends: default
 
+# Helm templates are not YAML until rendered.
+ignore: |
+  apps/templates/
+
 rules:
   document-start: disable
   line-length:
