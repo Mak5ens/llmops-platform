@@ -62,7 +62,7 @@ Requirements: [Docker](https://docs.docker.com/engine/install/), [k3d](https://k
 The empty cluster takes about 1 GB of RAM; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
 
 ```bash
-just up          # k3d cluster, then ArgoCD and the root Application (about 1 min 15 s)
+just up          # k3d cluster, then ArgoCD and the root Application (about 1 min)
 just test        # cluster healthy, every Application synced and healthy, self-heal
 just argocd-ui   # admin password, then the UI on http://localhost:8080
 just down        # deletes the cluster, its registry and its kube context
