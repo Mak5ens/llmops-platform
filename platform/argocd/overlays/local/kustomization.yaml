@@ -12,3 +12,4 @@ patches:
         namespace: argocd
       data:
         timeout.reconciliation: 60s
+        ui.bannercontent: "GitOps test"
