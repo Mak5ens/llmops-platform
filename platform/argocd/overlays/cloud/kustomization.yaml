@@ -1,0 +1,5 @@
+# Kapsule (milestone 2.3): same as the base for now; the GitHub webhook and the public host name come with it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base

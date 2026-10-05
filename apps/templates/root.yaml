@@ -1,0 +1,25 @@
+# The root Application, which renders this chart: applied once by `just bootstrap`, then managed by itself.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoURL }}
+    targetRevision: {{ .Values.revision }}
+    path: apps
+    helm:
+      parameters:
+        - name: env
+          value: {{ .Values.env }}
+        - name: revision
+          value: {{ .Values.revision }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

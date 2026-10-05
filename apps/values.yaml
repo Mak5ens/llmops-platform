@@ -1,0 +1,14 @@
+# Environment overlay and Git revision of every component. The root Application passes them,
+# and renders itself with the same values: `just bootstrap` only sets them once.
+env: local
+revision: main
+repoURL: https://github.com/Mak5ens/llmops-platform.git
+
+# One ArgoCD Application per component, deployed from platform/<name>/overlays/<env>.
+# Waves order the deployment: CRDs and operators first, then what uses them.
+components:
+  - name: argocd
+    namespace: argocd
+    wave: -10
+    # Deleting this Application must never delete ArgoCD itself.
+    keepResources: true

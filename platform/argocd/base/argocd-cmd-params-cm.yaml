@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+data:
+  # TLS ends at Envoy Gateway (ADR-005); the ArgoCD server behind it speaks plain HTTP.
+  server.insecure: "true"

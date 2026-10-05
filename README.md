@@ -56,16 +56,21 @@ Request path: team app → Envoy Gateway → LiteLLM (team key, anonymization, r
 
 ## Quick start
 
-Milestone 2.1 is under way: today `just up` creates an empty local cluster. ArgoCD and the apps come next (LAB-124 onwards).
+Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which manages itself from Git. The other components come next (LAB-125 onwards).
 
-Requirements: [Docker](https://docs.docker.com/engine/install/), [k3d](https://k3d.io/) v5.9.0, [kubectl](https://kubernetes.io/docs/tasks/tools/) and [just](https://just.systems/).
+Requirements: [Docker](https://docs.docker.com/engine/install/), [k3d](https://k3d.io/) v5.9.0, [kubectl](https://kubernetes.io/docs/tasks/tools/), [Helm](https://helm.sh/) v4 and [just](https://just.systems/).
 The empty cluster takes about 1 GB of RAM; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
 
 ```bash
-just cluster-up      # k3d cluster "llmops": 1 server, 2 agents, Kubernetes 1.37, local registry (about 20 s)
-just cluster-check   # nodes ready, system pods up, no Traefik, registry usable from the cluster
-just cluster-down    # deletes the cluster, its registry and its kube context
+just up          # k3d cluster, then ArgoCD and the root Application (about 1 min)
+just test        # cluster healthy, every Application synced and healthy, self-heal
+just argocd-ui   # admin password, then the UI on http://localhost:8080
+just down        # deletes the cluster, its registry and its kube context
 ```
+
+ArgoCD deploys what is on GitHub, not what is on your disk: it follows `main` by default. To try a branch, push it and run `REVISION=my-branch just up`.
+
+### The local cluster
 
 The cluster is described in [`local/k3d.yaml`](local/k3d.yaml):
 
@@ -74,16 +79,29 @@ The cluster is described in [`local/k3d.yaml`](local/k3d.yaml):
 - a local registry for images built on the machine: push to `localhost:5050/<image>`, reference `registry.localhost:5050/<image>` in manifests. The platform itself pulls its images from GHCR;
 - the `k3d-llmops` context is added to `~/.kube/config` without becoming the current one (unless there was none). Recipes always pass it explicitly.
 
-The CI creates the same cluster on every PR and runs `just cluster-check` on it.
+`just cluster-up`, `just cluster-check` and `just cluster-down` handle the cluster alone.
+
+### GitOps with ArgoCD
+
+`just bootstrap` installs ArgoCD once and hands it the root Application. From then on, nothing is installed by hand:
+
+- [`platform/<component>/`](platform/) holds each component as Kustomize, with a `base` and one overlay per environment, `local` and `cloud`;
+- [`apps/`](apps/) is the app of apps, a small Helm chart: one ArgoCD Application per component of [`apps/values.yaml`](apps/values.yaml), pointing to `platform/<component>/overlays/<env>`. Sync waves order them, operators and CRDs first;
+- the root Application renders this chart with the environment and the Git revision, including itself, so both are set once by the bootstrap;
+- ArgoCD manages its own installation from [`platform/argocd/`](platform/argocd/), like any other component;
+- every Application syncs automatically, prunes what was removed from Git, and repairs manual changes (self-heal).
+
+Locally, ArgoCD polls GitHub every minute: a pushed change reaches the cluster within about a minute and a half.
+The CI does the same on every PR: it creates the cluster, bootstraps ArgoCD from the branch under test and runs `just test`.
 
 ### On minikube or a k3s server
 
-k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): what is deployed on it also runs on an existing cluster, given its kube context.
+k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
 
 - **minikube**: `minikube start --kubernetes-version=v1.37.0 --cpus=4 --memory=16g`, then `minikube tunnel` in another terminal so that LoadBalancer Services get an address.
 - **k3s server**: disable Traefik in `/etc/rancher/k3s/config.yaml` (`disable: [traefik]`) before installing, and copy `/etc/rancher/k3s/k3s.yaml` into your kubeconfig.
 
-The bootstrap command for an existing cluster comes with LAB-124.
+Then bootstrap it: `just bootstrap <kube context>` (for example `just bootstrap minikube`).
 
 To contribute, install the git hooks (requires [pre-commit](https://pre-commit.com/)):
 

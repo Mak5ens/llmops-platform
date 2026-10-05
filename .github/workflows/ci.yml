@@ -50,7 +50,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cluster:
-    # Creates the local k3d cluster on the runner and checks it, as `just cluster-up` does on a laptop (ADR-017).
+    # Creates the local k3d cluster on the runner, bootstraps ArgoCD from the branch under test,
+    # then runs the tests, as `just up` and `just test` do on a laptop (ADR-017).
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -59,16 +60,25 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: extractions/setup-just@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.3.0
       - name: Install k3d
         run: |
           curl -fsSLo k3d "https://github.com/k3d-io/k3d/releases/download/${K3D_VERSION}/k3d-linux-amd64"
           echo "${K3D_SHA256}  k3d" | sha256sum -c
           sudo install -m 755 k3d /usr/local/bin/k3d
       - run: just cluster-up
-      - run: just cluster-check
+      # ArgoCD deploys from the branch under test, which is already on GitHub.
+      # Passed through env, never interpolated into the script: a branch name is user input.
+      - run: just bootstrap k3d-llmops local "$REVISION"
+        env:
+          REVISION: ${{ github.head_ref || github.ref_name }}
+      - run: just test
       - name: Cluster state on failure
         if: failure()
         run: |
           kubectl --context k3d-llmops get pods -A -o wide
           kubectl --context k3d-llmops get events -A --sort-by=.lastTimestamp
+          kubectl --context k3d-llmops -n argocd get applications -o yaml
       - run: just cluster-down
