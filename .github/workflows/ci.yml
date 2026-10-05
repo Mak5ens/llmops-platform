@@ -48,3 +48,27 @@ jobs:
       - uses: amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cluster:
+    # Creates the local k3d cluster on the runner and checks it, as `just cluster-up` does on a laptop (ADR-017).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      K3D_VERSION: v5.9.0
+      K3D_SHA256: 06d8f25bc3a971c4eb29e0ff08429b180402db0f4dec838c9eac427e296800a0
+    steps:
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+      - name: Install k3d
+        run: |
+          curl -fsSLo k3d "https://github.com/k3d-io/k3d/releases/download/${K3D_VERSION}/k3d-linux-amd64"
+          echo "${K3D_SHA256}  k3d" | sha256sum -c
+          sudo install -m 755 k3d /usr/local/bin/k3d
+      - run: just cluster-up
+      - run: just cluster-check
+      - name: Cluster state on failure
+        if: failure()
+        run: |
+          kubectl --context k3d-llmops get pods -A -o wide
+          kubectl --context k3d-llmops get events -A --sort-by=.lastTimestamp
+      - run: just cluster-down

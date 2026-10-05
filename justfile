@@ -10,14 +10,27 @@ hooks:
 lint:
     pre-commit run --all-files
 
-# Start the stack locally
-up:
-    @echo "Not implemented yet: see LAB-123 (reproducible local k3d cluster)" && exit 1
+# Kube context of the local k3d cluster
+context := "k3d-llmops"
 
-# Stop the stack
-down:
-    @echo "Not implemented yet: see LAB-123 (reproducible local k3d cluster)" && exit 1
+# Create the local k3d cluster (local/k3d.yaml)
+cluster-up:
+    k3d cluster create --config local/k3d.yaml
+    @echo "Cluster ready, context {{context}} (not made current)"
 
-# Run the tests
-test:
-    @echo "Not implemented yet: see LAB-123" && exit 1
+# Delete the local k3d cluster and its registry
+cluster-down:
+    k3d cluster delete --config local/k3d.yaml
+
+# Check that the local cluster is healthy (nodes, system pods, registry)
+cluster-check:
+    scripts/cluster-check.sh {{context}}
+
+# Start the platform locally (the ArgoCD bootstrap comes with LAB-124)
+up: cluster-up
+
+# Stop the platform
+down: cluster-down
+
+# Run the tests against the local cluster
+test: cluster-check
