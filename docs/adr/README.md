@@ -13,6 +13,7 @@ This repo holds the **cross-cutting ADRs** of the whole platform. ADRs that only
 | [ADR-005](005-gateway-api-and-envoy-gateway.md) | Gateway API with Envoy Gateway | Accepted |
 | [ADR-006](006-self-hosted-langfuse.md) | Self-hosted Langfuse rather than Langfuse Cloud | Accepted |
 | [ADR-010](010-multi-repo.md) | Several repos rather than a monorepo | Accepted |
+| [ADR-017](017-local-cluster-k3d.md) | k3d for the local cluster and the CI, with scripts that run on any cluster | Accepted |
 
 ADR numbers are global to the portfolio: a number used in one repo is never reused in another.
 Repo-specific ADRs so far, all in `llmops-gateway`:
