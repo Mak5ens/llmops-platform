@@ -89,7 +89,7 @@ GPUs are rented on Scaleway for a few hours for the final measurements, then `te
 
 ## Architecture decisions
 
-This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse and the multi-repo layout. Repo-specific ADRs stay in their own repo.
+This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse, the multi-repo layout and k3d for the local cluster. Repo-specific ADRs stay in their own repo.
 
 ## Part of an internal AI platform
 
