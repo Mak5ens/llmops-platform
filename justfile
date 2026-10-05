@@ -13,6 +13,9 @@ lint:
 # Kube context of the local k3d cluster
 context := "k3d-llmops"
 
+# Git revision ArgoCD deploys from; must be pushed (REVISION=my-branch just up)
+revision := env("REVISION", "main")
+
 # Create the local k3d cluster (local/k3d.yaml)
 cluster-up:
     k3d cluster create --config local/k3d.yaml
@@ -26,11 +29,22 @@ cluster-down:
 cluster-check:
     scripts/cluster-check.sh {{context}}
 
-# Start the platform locally (the ArgoCD bootstrap comes with LAB-124)
-up: cluster-up
+# Install ArgoCD on a cluster and give it the root Application (any cluster: k3d, minikube, k3s)
+bootstrap ctx=context env="local" rev=revision:
+    scripts/bootstrap.sh {{ctx}} {{env}} {{rev}}
+
+# Print the ArgoCD admin password and open the UI on http://localhost:8080 (port-forward)
+argocd-ui ctx=context:
+    @kubectl --context {{ctx}} -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo " (user admin)"
+    kubectl --context {{ctx}} -n argocd port-forward service/argocd-server 8080:80
+
+# Start the platform locally: k3d cluster, then ArgoCD deploys everything from Git
+up: cluster-up (bootstrap context "local" revision)
 
 # Stop the platform
 down: cluster-down
 
 # Run the tests against the local cluster
 test: cluster-check
+    scripts/argocd-check.sh {{context}}
+    scripts/selfheal-check.sh {{context}}
