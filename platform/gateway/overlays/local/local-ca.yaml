@@ -1,0 +1,47 @@
+# A self-signed root, used only to sign the local certificate authority.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: local-ca
+  # A ClusterIssuer reads its secret from cert-manager's namespace.
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: llmops-platform local CA
+  secretName: local-ca
+  duration: 87600h # 10 years: recreated with the cluster anyway
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    kind: ClusterIssuer
+    name: selfsigned
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: local-ca
+spec:
+  ca:
+    secretName: local-ca
+---
+# Wildcard certificate of the HTTPS listener.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: platform-tls
+  namespace: gateway
+spec:
+  secretName: platform-tls
+  dnsNames:
+    - "*.localtest.me"
+  issuerRef:
+    kind: ClusterIssuer
+    name: local-ca

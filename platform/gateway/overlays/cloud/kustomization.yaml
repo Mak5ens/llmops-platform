@@ -1,0 +1,6 @@
+# Kapsule (milestone 2.3, LAB-132): the domain, its DNS and a Let's Encrypt issuer replace localtest.me
+# and the local certificate authority. Not deployable yet: the HTTPS listener has no certificate here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base

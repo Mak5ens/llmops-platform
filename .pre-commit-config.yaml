@@ -33,6 +33,14 @@ repos:
     hooks:
       - id: gitleaks
 
+  - repo: local
+    hooks:
+      - id: no-ingress
+        name: no Ingress resource (Gateway API only, ADR-005)
+        language: pygrep
+        entry: '^kind:\s*Ingress\s*$'
+        files: \.ya?ml$
+
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.4.0
     hooks:

@@ -1,0 +1,30 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: platform
+  namespace: gateway
+spec:
+  gatewayClassName: envoy
+  listeners:
+    # Plain HTTP only redirects to HTTPS (https-redirect.yaml).
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.localtest.me"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: platform-tls
+      # Only namespaces labelled for it can attach routes, so a tenant cannot take over another host name.
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              llmops-platform/gateway-access: "true"

@@ -1,0 +1,7 @@
+# Local certificates come from a certificate authority created in the cluster: `just ca-cert` exports it
+# so that curl or a browser can trust it. Host names use localtest.me, whose subdomains all resolve to 127.0.0.1.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - local-ca.yaml

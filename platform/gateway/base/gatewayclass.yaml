@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: envoy
+    namespace: gateway
+---
+# How Envoy Gateway deploys the proxies. The Service type is the one setting that depends on the
+# cluster (ADR-017): LoadBalancer works on k3d, k3s, Kapsule, and on minikube with `minikube tunnel`.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy
+  namespace: gateway
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        type: LoadBalancer
