@@ -36,7 +36,7 @@ To keep the scripts portable, k3d is confined to cluster creation:
 
 - `local/k3d.yaml` and the `just cluster-up` and `just cluster-down` recipes are the only k3d-specific files.
 - Everything after creation (installing ArgoCD, the app of apps, the tests) goes through `kubectl` and `helm` on a kube context passed explicitly, never the current one by default, so that a deployment never lands on the wrong cluster. `just up` chains `cluster-up` and this bootstrap; on minikube or k3s, one runs the bootstrap alone on that context.
-- No manifest depends on what k3s bundles: Traefik is disabled (Envoy Gateway handles exposure, [ADR-005](005-gateway-api-and-envoy-gateway.md)), PersistentVolumeClaims use the cluster's default StorageClass instead of naming `local-path`, and the type of the Envoy Gateway Service can be set per environment.
+- No manifest depends on what k3s bundles: Traefik is disabled (Envoy Gateway handles exposure, [ADR-005](005-gateway-api-and-envoy-gateway.md)), so are the Gateway API CRDs that k3s 1.37 bundles (they conflict with Envoy Gateway's, added on 2026-10-06), PersistentVolumeClaims use the cluster's default StorageClass instead of naming `local-path`, and the type of the Envoy Gateway Service can be set per environment.
 - Images come from GHCR, as on Kapsule. The local registry only serves images built on the machine during development.
 
 ## Consequences
