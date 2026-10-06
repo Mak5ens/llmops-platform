@@ -12,7 +12,7 @@ restored=$cluster-restore-check
 backup=$cluster-restore-check-$(date +%s)
 trap '"${kc[@]}" -n "$ns" delete cluster "$restored" --ignore-not-found --wait=false >/dev/null' EXIT
 
-sql() { "${kc[@]}" -n "$ns" exec "$1" -c postgres -- psql -U postgres -d postgres -tAc "$2"; }
+sql() { "${kc[@]}" -n "$ns" exec "$1" -c postgres -- psql -U postgres -d postgres -qtA -c "SET client_min_messages = warning" -c "$2"; }
 
 primary=$("${kc[@]}" -n "$ns" get cluster "$cluster" -o jsonpath='{.status.currentPrimary}')
 marker="restore-$(date +%s)"
@@ -34,6 +34,14 @@ spec:
 YAML
 "${kc[@]}" -n "$ns" wait --for=jsonpath='{.status.phase}'=completed "backup/$backup" --timeout=300s
 echo "Backup $backup completed in $(($(date +%s) - start)) s"
+# Close the current WAL segment and wait for it to reach S3: the restore replays WAL up to the
+# last archived segment, and PostgreSQL would only switch on its own after archive_timeout (5 min).
+segment=$(sql "$primary" "SELECT pg_walfile_name(pg_switch_wal())")
+for _ in $(seq 60); do
+  [[ $(sql "$primary" "SELECT last_archived_wal >= '$segment' FROM pg_stat_archiver") == t ]] && break
+  sleep 1
+done
+echo "WAL archived up to $segment"
 
 echo "== Restoring into $restored"
 start=$(date +%s)

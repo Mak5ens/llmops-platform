@@ -14,6 +14,8 @@ This repo holds the **cross-cutting ADRs** of the whole platform. ADRs that only
 | [ADR-006](006-self-hosted-langfuse.md) | Self-hosted Langfuse rather than Langfuse Cloud | Accepted |
 | [ADR-010](010-multi-repo.md) | Several repos rather than a monorepo | Accepted |
 | [ADR-017](017-local-cluster-k3d.md) | k3d for the local cluster and the CI, with scripts that run on any cluster | Accepted |
+| [ADR-018](018-postgresql-cloudnativepg.md) | PostgreSQL with CloudNativePG, backups to S3, SeaweedFS as the local S3 | Accepted |
+| [ADR-019](019-external-secrets.md) | External Secrets Operator, with a local backend that never touches Git | Accepted |
 
 ADR numbers are global to the portfolio: a number used in one repo is never reused in another.
 Repo-specific ADRs so far, all in `llmops-gateway`:

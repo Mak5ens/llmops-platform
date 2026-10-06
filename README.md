@@ -56,14 +56,14 @@ Request path: team app → Envoy Gateway → LiteLLM (team key, anonymization, r
 
 ## Quick start
 
-Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which deploys the rest from Git. Today that is ArgoCD itself and HTTP exposure (Envoy Gateway, cert-manager); databases and the gateway of block 1 come next (LAB-126, LAB-127).
+Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which deploys the rest from Git. Today that is ArgoCD itself, HTTP exposure (Envoy Gateway, cert-manager), secrets (External Secrets) and the PostgreSQL databases of the gateway and Langfuse (CloudNativePG); the gateway of block 1 comes next (LAB-127).
 
 Requirements: [Docker](https://docs.docker.com/engine/install/), [k3d](https://k3d.io/) v5.9.0, [kubectl](https://kubernetes.io/docs/tasks/tools/), [Helm](https://helm.sh/) v4 and [just](https://just.systems/).
-The empty cluster takes about 1 GB of RAM; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
+The empty cluster takes about 1 GB of RAM, the platform as it stands about 5.5 GB; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
 
 ```bash
 just up               # k3d cluster, then ArgoCD deploys every component from Git
-just test             # cluster, Applications synced and healthy, self-heal, HTTPS through the Gateway
+just test             # cluster, Applications, self-heal, HTTPS, PostgreSQL failover and restore
 just ca-cert          # exports the local CA to local/ca.pem
 just argocd-password  # ArgoCD admin password; the UI is on https://argocd.localtest.me
 just down             # deletes the cluster, its registry and its kube context
@@ -105,6 +105,16 @@ Services are exposed through the Gateway API ([ADR-005](docs/adr/005-gateway-api
 - each service brings its own `HTTPRoute`. Only namespaces labelled `llmops-platform/gateway-access: "true"` can attach one, so a tenant cannot take over another host name;
 - locally, certificates come from a certificate authority created by cert-manager in the cluster. `just ca-cert` exports it, to pass to curl (`--cacert local/ca.pem`) or to import in a browser. The CA is new with every cluster.
 
+### Databases and secrets
+
+- [`platform/cloudnative-pg/`](platform/cloudnative-pg/) installs the CloudNativePG operator and its Barman Cloud plugin ([ADR-018](docs/adr/018-postgresql-cloudnativepg.md)). Each application that needs PostgreSQL declares its own `Cluster` in its component: `litellm-db` in [`platform/llm-gateway/`](platform/llm-gateway/), `langfuse-db` in [`platform/langfuse/`](platform/langfuse/);
+- each cluster runs a primary and a synchronous replica on different nodes. If the primary fails, the replica takes over without losing a commit: 15 s measured locally;
+- WAL is archived continuously to S3, with a base backup every night and one at creation, kept 7 days: any point in time of the last week can be restored ([runbook](docs/runbooks/postgres-restore.md)). Locally, the S3 store is SeaweedFS ([`platform/object-storage/`](platform/object-storage/)); on Kapsule, Scaleway Object Storage;
+- [`platform/external-secrets/`](platform/external-secrets/) installs External Secrets Operator ([ADR-019](docs/adr/019-external-secrets.md)). Every `ExternalSecret` reads the `ClusterSecretStore` named `platform` ([`platform/secret-store/`](platform/secret-store/)): locally, random values that `just bootstrap` writes once into the `local-secrets` namespace; on Kapsule, Scaleway Secret Manager. No secret value is ever in Git, and gitleaks checks the whole history in the CI;
+- applications connect to their database with the `<cluster>-app` Secret that CloudNativePG creates.
+
+`just test` deletes the primary of `litellm-db` and checks that the last commit survives, then restores a fresh backup into a new cluster from S3 alone.
+
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
@@ -141,7 +151,7 @@ GPUs are rented on Scaleway for a few hours for the final measurements, then `te
 
 ## Architecture decisions
 
-This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse, the multi-repo layout and k3d for the local cluster. Repo-specific ADRs stay in their own repo.
+This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse, the multi-repo layout, k3d for the local cluster, CloudNativePG and External Secrets. Repo-specific ADRs stay in their own repo.
 
 ## Part of an internal AI platform
 

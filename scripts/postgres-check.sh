@@ -21,7 +21,7 @@ echo "== PostgreSQL clusters"
 
 primary() { "${kc[@]}" -n "$ns" get cluster "$cluster" -o jsonpath='{.status.currentPrimary}'; }
 # Test rows go to the "postgres" database, never into the application's.
-sql() { "${kc[@]}" -n "$ns" exec "$1" -c postgres -- psql -U postgres -d postgres -tAc "$2"; }
+sql() { "${kc[@]}" -n "$ns" exec "$1" -c postgres -- psql -U postgres -d postgres -qtA -c "SET client_min_messages = warning" -c "$2"; }
 
 echo "== Failover of $cluster"
 old=$(primary)
