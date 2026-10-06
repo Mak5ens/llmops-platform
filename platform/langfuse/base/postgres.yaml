@@ -6,6 +6,10 @@ metadata:
   name: langfuse-db
 spec:
   instances: 2
+  # When the primary's pod is deleted, PostgreSQL first waits for its clients to disconnect, 180 s by default. LiteLLM
+  # and Langfuse keep their connections open, so the replica only took over after that wait. With synchronous
+  # replication, a fast shutdown loses no committed transaction.
+  smartShutdownTimeout: 5
   postgresql:
     # A commit returns once a replica has it, so a failover loses no committed transaction.
     # "preferred": with no replica up, the primary keeps accepting writes instead of blocking.
