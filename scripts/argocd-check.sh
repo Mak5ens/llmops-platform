@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
-# Wait until every ArgoCD Application is synced and healthy.
-# Usage: scripts/argocd-check.sh <kube context> [timeout in seconds, default 600]
+# Wait until every ArgoCD Application is synced and healthy, printing when each one gets there.
+# Usage: scripts/argocd-check.sh <kube context> [timeout in seconds, default 900]
 set -euo pipefail
 
 context=${1:?usage: $0 <kube context> [timeout]}
-timeout=${2:-600}
+timeout=${2:-900}
 kc=(kubectl --context "$context" -n argocd)
-deadline=$((SECONDS + timeout))
+start=$SECONDS
+deadline=$((start + timeout))
+ready=""
 
 echo "== ArgoCD Applications"
 while true; do
   # name sync health, one line per Application; empty while the root has not created its children.
   status=$("${kc[@]}" get applications -o jsonpath='{range .items[*]}{.metadata.name} {.status.sync.status} {.status.health.status}{"\n"}{end}')
+  # Report each Application the first time it is synced and healthy.
+  while read -r name _; do
+    [[ -n $name && " $ready " != *" $name "* ]] || continue
+    ready="$ready $name"
+    echo "$((SECONDS - start)) s: $name synced and healthy"
+  done < <(grep ' Synced Healthy$' <<<"$status")
   if [[ -n $status ]] && ! grep -qv ' Synced Healthy$' <<<"$status"; then
     echo "$status" | column -t
     echo "Every Application is synced and healthy"
