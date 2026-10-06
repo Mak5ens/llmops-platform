@@ -1,0 +1,96 @@
+# Copy of config/tenants.yaml of llmops-gateway: keep both identical. On the cluster, the tenants-bootstrap Job
+# applies it after every sync, and secrets come from the gateway-env Secret instead of .env.
+#
+# Client teams of the gateway: what each one may call, how much it may spend, and how fast.
+# Applied by scripts/bootstrap_tenants.py on every `just gateway-up` (the `tenants-bootstrap` service).
+# Re-running is safe: missing teams and keys are created, existing ones are updated to match this file.
+# Removing a team from this file does not delete it from the gateway.
+#
+# Budgets are in US dollars, counted with the internal prices set per alias in config/litellm.yaml.
+# budget_duration resets the spend: "30d", "7d", "1h"...
+#
+# pii_masking: "required" runs the pii-fr guardrail of config/litellm.yaml on every request of the team;
+# "optional" opts the team out of it, and a request then masks personal data only when it asks for
+# the pii-fr-on-request guardrail.
+#
+# langfuse: the team's own organization and project in Langfuse, where LiteLLM sends the team's traces, and a
+# read-only account for the team's lead, who sees the calls and costs of this team and of no other.
+# Applied by scripts/bootstrap_langfuse.py. Secrets (secret key, password) come from .env.
+
+teams:
+  # F1 strategy analyst: an agent with RAG over race data, so it needs chat and embeddings.
+  - team_id: f1
+    team_alias: F1 strategy analyst
+    models: [chat-small, chat-large, embed]
+    max_budget: 10
+    budget_duration: 30d
+    # Race data holds no personal data; masking stays available per request.
+    pii_masking: optional
+    key:
+      key_alias: f1-app
+      # The key value is a secret: it comes from .env locally, from a secret manager on the cluster.
+      value_env: TEAM_KEY_F1
+      rpm_limit: 60
+      tpm_limit: 100000
+    langfuse:
+      public_key: pk-lf-f1
+      secret_key_env: LANGFUSE_SECRET_KEY_F1
+      viewer_email: f1-lead@llmops.local
+      viewer_password_env: LANGFUSE_VIEWER_PASSWORD_F1
+
+  # Game master assistant: chat only, and the most bursty traffic (players waiting at the table).
+  - team_id: mj
+    team_alias: Game master assistant
+    models: [chat-small, chat-large]
+    max_budget: 5
+    budget_duration: 30d
+    # Characters are fictional, and masking their names would confuse the story.
+    pii_masking: optional
+    key:
+      key_alias: mj-app
+      value_env: TEAM_KEY_MJ
+      rpm_limit: 30
+      tpm_limit: 50000
+    langfuse:
+      public_key: pk-lf-mj
+      secret_key_env: LANGFUSE_SECRET_KEY_MJ
+      viewer_email: mj-lead@llmops.local
+      viewer_password_env: LANGFUSE_VIEWER_PASSWORD_MJ
+
+  # Residential lease compliance checker: long documents, quality over speed, RAG over the law.
+  - team_id: baux
+    team_alias: Lease compliance checker
+    models: [chat-large, embed]
+    max_budget: 5
+    budget_duration: 30d
+    # Leases name tenants and landlords, with their addresses and bank details.
+    pii_masking: required
+    key:
+      key_alias: baux-app
+      value_env: TEAM_KEY_BAUX
+      rpm_limit: 20
+      tpm_limit: 50000
+    langfuse:
+      public_key: pk-lf-baux
+      secret_key_env: LANGFUSE_SECRET_KEY_BAUX
+      viewer_email: baux-lead@llmops.local
+      viewer_password_env: LANGFUSE_VIEWER_PASSWORD_BAUX
+
+  # Customer service assistant: drafts answers to customers, short and fast, on both chat aliases.
+  - team_id: support
+    team_alias: Customer service assistant
+    models: [chat-small, chat-large]
+    max_budget: 5
+    budget_duration: 30d
+    # Customers write with their name, address, phone number and bank details.
+    pii_masking: required
+    key:
+      key_alias: support-app
+      value_env: TEAM_KEY_SUPPORT
+      rpm_limit: 30
+      tpm_limit: 50000
+    langfuse:
+      public_key: pk-lf-support
+      secret_key_env: LANGFUSE_SECRET_KEY_SUPPORT
+      viewer_email: support-lead@llmops.local
+      viewer_password_env: LANGFUSE_VIEWER_PASSWORD_SUPPORT

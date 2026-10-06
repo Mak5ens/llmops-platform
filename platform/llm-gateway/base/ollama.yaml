@@ -1,0 +1,159 @@
+# Model servers until vLLM (milestone 3): one Ollama server per Deployment, as in the compose stack, so stopping
+# ollama-large simulates the outage of the chat-large server (fallback test). Models must match config/litellm.yaml.
+# Serves chat-small and embed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+spec:
+  replicas: 1
+  # One volume, mounted by one pod at a time.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ollama
+    spec:
+      initContainers:
+        # Downloads the models on first start; later starts only check them.
+        - name: pull-models
+          image: ollama/ollama:0.34.4
+          command: [sh, -c]
+          args:
+            - ollama serve & until ollama list >/dev/null 2>&1; do sleep 1; done;
+              for m in $MODELS; do ollama pull $m || exit 1; done
+          env:
+            - name: MODELS
+              value: "qwen2.5:0.5b granite-embedding:278m"
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      containers:
+        - name: ollama
+          image: ollama/ollama:0.34.4
+          ports:
+            - name: http
+              containerPort: 11434
+          # The image has neither curl nor wget.
+          readinessProbe:
+            exec:
+              command: [ollama, list]
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 768Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+spec:
+  selector:
+    app.kubernetes.io/name: ollama
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http
+---
+# Serves chat-large.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-large
+spec:
+  replicas: 1
+  # One volume, mounted by one pod at a time.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ollama-large
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ollama-large
+    spec:
+      initContainers:
+        # Downloads the models on first start; later starts only check them.
+        - name: pull-models
+          image: ollama/ollama:0.34.4
+          command: [sh, -c]
+          args:
+            - ollama serve & until ollama list >/dev/null 2>&1; do sleep 1; done;
+              for m in $MODELS; do ollama pull $m || exit 1; done
+          env:
+            - name: MODELS
+              value: "qwen2.5:1.5b"
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      containers:
+        - name: ollama
+          image: ollama/ollama:0.34.4
+          ports:
+            - name: http
+              containerPort: 11434
+          # The image has neither curl nor wget.
+          readinessProbe:
+            exec:
+              command: [ollama, list]
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1536Mi
+            limits:
+              memory: 3Gi
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-large-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-large-models
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-large
+spec:
+  selector:
+    app.kubernetes.io/name: ollama-large
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http

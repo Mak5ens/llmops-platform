@@ -1,0 +1,43 @@
+# Values of the official LiteLLM chart, at the version of the compose stack of llmops-gateway.
+fullnameOverride: litellm
+image:
+  # The official litellm-database image, plus the pii-fr guardrail class next to the config file and the tenant
+  # bootstrap scripts (docker/litellm/Dockerfile in llmops-gateway).
+  repository: ghcr.io/mak5ens/llmops-gateway/litellm
+  # Tag set by `images` in ../kustomization.yaml, with the Presidio Analyzer image of the same commit.
+  tag: set-by-kustomize
+  pullPolicy: IfNotPresent
+# config.yaml from the litellm-config ConfigMap (../kustomization.yaml).
+proxyConfigMap:
+  create: false
+  name: litellm-config
+  key: config.yaml
+masterkeySecretName: litellm-env
+masterkeySecretKey: LITELLM_MASTER_KEY
+# LITELLM_MASTER_KEY, LITELLM_SALT_KEY and the Langfuse keys, read by config.yaml as os.environ/...
+environmentSecrets:
+  - litellm-env
+envVars:
+  # INFO shows retries, fallbacks and cooldowns in the logs.
+  LITELLM_LOG: INFO
+  LANGFUSE_HOST: http://langfuse-web.langfuse.svc:3000
+# The litellm-db cluster of CloudNativePG; LiteLLM applies its migrations at startup, as in the compose stack.
+db:
+  useExisting: true
+  deployStandalone: false
+  endpoint: litellm-db-rw
+  database: litellm
+  secret:
+    name: litellm-db-app
+    usernameKey: username
+    passwordKey: password
+migrationJob:
+  enabled: false
+resources:
+  requests:
+    cpu: 200m
+    memory: 768Mi
+  limits:
+    memory: 2Gi
+# One replica: the compose stack has one, and the tests read its logs.
+replicaCount: 1

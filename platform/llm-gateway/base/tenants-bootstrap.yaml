@@ -1,0 +1,51 @@
+# Creates or updates the client teams of tenants.yaml, their keys and their Langfuse projects, after every sync of
+# the gateway: scripts/bootstrap_tenants.py of llmops-gateway, in its LiteLLM image. Safe to re-run.
+# The integration tests run it again from this Job's spec, so it is kept until the next sync.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tenants-bootstrap
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: bootstrap
+          image: ghcr.io/mak5ens/llmops-gateway/litellm
+          command: [python3, /opt/llmops-gateway/bootstrap_tenants.py]
+          env:
+            - name: LITELLM_URL
+              value: http://litellm:4000
+            - name: TENANTS_FILE
+              value: /config/tenants/tenants.yaml
+            # The prices of the aliases, which Langfuse needs to price the traces like LiteLLM.
+            - name: LITELLM_CONFIG
+              value: /config/litellm/config.yaml
+            - name: LANGFUSE_URL
+              value: http://langfuse-web.langfuse.svc:3000
+          # Team keys, Langfuse keys and accounts, LANGFUSE_SALT and LANGFUSE_DATABASE_URL (secrets.yaml).
+          envFrom:
+            - secretRef:
+                name: gateway-env
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: tenants
+              mountPath: /config/tenants
+            - name: litellm
+              mountPath: /config/litellm
+      volumes:
+        - name: tenants
+          configMap:
+            name: tenants-config
+        - name: litellm
+          configMap:
+            name: litellm-config

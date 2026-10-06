@@ -1,0 +1,93 @@
+# Values of the official Langfuse chart. Same settings as compose.langfuse.yaml in llmops-gateway, same version.
+# Every secret comes from an ExternalSecret (secrets.yaml): the chart can generate them, but ArgoCD renders the chart
+# on every sync, so generated values would change each time.
+langfuse:
+  image:
+    tag: "4.47.0"
+    pullPolicy: IfNotPresent
+  salt:
+    secretKeyRef: {name: langfuse-env, key: SALT}
+  encryptionKey:
+    secretKeyRef: {name: langfuse-env, key: ENCRYPTION_KEY}
+  nextauth:
+    url: https://langfuse.localtest.me
+    secret:
+      secretKeyRef: {name: langfuse-env, key: NEXTAUTH_SECRET}
+  features:
+    telemetryEnabled: false
+    # No sign-up page: the admin below is the only account, the teams' leads are created by the bootstrap.
+    signUpDisabled: true
+  additionalEnv:
+    # Created on first start only, as in the compose stack: the organization, the Gateway project, its API keys and
+    # the platform admin. The teams' organizations and projects come from the tenant bootstrap (llm-gateway).
+    - name: LANGFUSE_INIT_ORG_ID
+      value: llmops-gateway
+    - name: LANGFUSE_INIT_ORG_NAME
+      value: LLMOps Gateway
+    - name: LANGFUSE_INIT_PROJECT_ID
+      value: gateway
+    - name: LANGFUSE_INIT_PROJECT_NAME
+      value: Gateway
+    - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+      valueFrom: {secretKeyRef: {name: langfuse-env, key: LANGFUSE_PUBLIC_KEY}}
+    - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+      valueFrom: {secretKeyRef: {name: langfuse-env, key: LANGFUSE_SECRET_KEY}}
+    - name: LANGFUSE_INIT_USER_EMAIL
+      valueFrom: {secretKeyRef: {name: langfuse-env, key: LANGFUSE_ADMIN_EMAIL}}
+    - name: LANGFUSE_INIT_USER_NAME
+      value: Admin
+    - name: LANGFUSE_INIT_USER_PASSWORD
+      valueFrom: {secretKeyRef: {name: langfuse-env, key: LANGFUSE_ADMIN_PASSWORD}}
+  web:
+    resources:
+      requests: {cpu: 100m, memory: 512Mi}
+      limits: {memory: 1536Mi}
+  worker:
+    resources:
+      requests: {cpu: 100m, memory: 512Mi}
+      limits: {memory: 1Gi}
+
+# The langfuse-db cluster of CloudNativePG (postgres.yaml).
+postgresql:
+  deploy: false
+  host: langfuse-db-rw
+  auth:
+    username: langfuse
+    existingSecret: langfuse-db-credentials
+    secretKeys:
+      userPasswordKey: password
+    database: langfuse
+
+# The single-node ClickHouse of clickhouse.yaml.
+clickhouse:
+  deploy: false
+  host: langfuse-clickhouse
+  auth:
+    username: clickhouse
+    existingSecret: langfuse-env
+    existingSecretKey: CLICKHOUSE_PASSWORD
+  cluster:
+    enabled: false
+
+# The queue between the web service and the worker: the chart's Valkey.
+redis:
+  deploy: true
+  auth:
+    existingSecret: langfuse-redis-auth
+    existingSecretPasswordKey: default
+
+# SeaweedFS of the object-storage component: one bucket, a prefix per kind of upload, as in the compose stack.
+# Media are only reachable from inside the cluster: the S3 API has no route.
+s3:
+  deploy: false
+  bucket: langfuse
+  endpoint: http://seaweedfs.object-storage.svc:8333
+  forcePathStyle: true
+  accessKeyId:
+    secretKeyRef: {name: langfuse-env, key: S3_ACCESS_KEY_ID}
+  secretAccessKey:
+    secretKeyRef: {name: langfuse-env, key: S3_SECRET_ACCESS_KEY}
+  eventUpload:
+    prefix: events/
+  mediaUpload:
+    prefix: media/

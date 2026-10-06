@@ -17,6 +17,10 @@ spec:
     initdb:
       database: langfuse
       owner: langfuse
+      # A known password rather than a generated one: the tenant bootstrap, in llm-gateway, writes the teams'
+      # projects into this database (ADR-016).
+      secret:
+        name: langfuse-db-credentials
   storage:
     size: 1Gi
   resources:

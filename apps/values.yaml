@@ -39,9 +39,10 @@ components:
   - name: gateway
     namespace: gateway
     wave: 0
-  - name: llm-gateway
-    namespace: llm-gateway
-    wave: 0
   - name: langfuse
     namespace: langfuse
     wave: 0
+  # After Langfuse: its tenant bootstrap creates the teams' projects there.
+  - name: llm-gateway
+    namespace: llm-gateway
+    wave: 1

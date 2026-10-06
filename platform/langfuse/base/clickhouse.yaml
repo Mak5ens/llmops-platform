@@ -1,0 +1,76 @@
+# Stores traces and observations, and answers the dashboards' queries. A single node, as in the compose stack of
+# llmops-gateway: the chart's ClickHouse needs the ClickHouse operator, one more operator for one database.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: langfuse-clickhouse
+spec:
+  serviceName: langfuse-clickhouse
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: langfuse-clickhouse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: langfuse-clickhouse
+    spec:
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:25.12.11.4
+          env:
+            - name: CLICKHOUSE_DB
+              value: default
+            - name: CLICKHOUSE_USER
+              value: clickhouse
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-env
+                  key: CLICKHOUSE_PASSWORD
+          ports:
+            - name: http
+              containerPort: 8123
+            - name: native
+              containerPort: 9000
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: langfuse-clickhouse
+spec:
+  selector:
+    app.kubernetes.io/name: langfuse-clickhouse
+  ports:
+    - name: http
+      port: 8123
+      targetPort: http
+    - name: native
+      port: 9000
+      targetPort: native

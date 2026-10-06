@@ -1,9 +1,31 @@
-# Langfuse, which traces every LLM call with its cost.
-# For now, its PostgreSQL database; the application arrives in LAB-127.
+# Langfuse, which traces every LLM call with its cost (ADR-006): its official chart, on the platform's PostgreSQL
+# (CloudNativePG) and S3 store, with a single-node ClickHouse. Valkey comes with the chart.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: langfuse
 resources:
+  - namespace.yaml
   - postgres.yaml
+  - secrets.yaml
+  - clickhouse.yaml
+  - route.yaml
 components:
   - ../../shared/postgres-backups
+helmCharts:
+  - name: langfuse
+    repo: https://langfuse.github.io/langfuse-k8s
+    version: 2.1.3
+    releaseName: langfuse
+    namespace: langfuse
+    valuesFile: values.yaml
+    # The chart's test pods are for `helm test`, not for ArgoCD.
+    skipTests: true
+# Valkey's sub-chart sets no namespace, and Kustomize's namespace transformer leaves the resources rendered from a
+# chart alone.
+patches:
+  - target:
+      name: langfuse-redis.*
+    patch: |
+      - op: add
+        path: /metadata/namespace
+        value: langfuse

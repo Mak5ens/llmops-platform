@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm-gateway
+  labels:
+    # Lets the gateway's HTTPRoute attach to the shared Gateway.
+    llmops-platform/gateway-access: "true"
