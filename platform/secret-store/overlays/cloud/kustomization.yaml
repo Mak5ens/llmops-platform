@@ -1,0 +1,8 @@
+# Kapsule (milestone 2.3, LAB-132): the store "platform" reads Scaleway Secret Manager, where Terraform
+# writes the secrets, with an IAM key limited to reading them. Scaleway names secrets with a prefix
+# (`key: name:s3-backup`), so this overlay will also patch the remoteRef keys of the ExternalSecrets.
+# Not deployable yet: no store here, so the ExternalSecrets stay unsynced.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base

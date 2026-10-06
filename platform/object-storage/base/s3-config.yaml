@@ -1,0 +1,27 @@
+# The S3 identities of SeaweedFS, rendered from the same secret the PostgreSQL clusters use.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: seaweedfs-s3-config
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: platform
+  target:
+    name: seaweedfs-s3-config
+    template:
+      data:
+        s3.json: |
+          {
+            "identities": [
+              {
+                "name": "postgres-backups",
+                "credentials": [{"accessKey": "{{ .ACCESS_KEY_ID }}", "secretKey": "{{ .ACCESS_SECRET_KEY }}"}],
+                "actions": ["Read", "Write", "List", "Tagging"]
+              }
+            ]
+          }
+  dataFrom:
+    - extract:
+        key: s3-backup

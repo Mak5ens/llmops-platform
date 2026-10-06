@@ -1,0 +1,12 @@
+# External Secrets Operator: copies secrets from a secret manager into Kubernetes Secrets (ADR-019).
+# Installed from its Helm chart: the static manifest of the release hardcodes the default namespace.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: external-secrets
+helmCharts:
+  - name: external-secrets
+    repo: https://charts.external-secrets.io
+    version: 2.11.0
+    releaseName: external-secrets
+    namespace: external-secrets
+    includeCRDs: true

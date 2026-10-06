@@ -1,4 +1,5 @@
 {{- range .Values.components }}
+{{- if or (not .envs) (has $.Values.env .envs) }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -29,4 +30,5 @@ spec:
       - CreateNamespace=true
       # Some CRDs (ArgoCD's own) are too large for the annotation of a client-side apply.
       - ServerSideApply=true
+{{- end }}
 {{- end }}

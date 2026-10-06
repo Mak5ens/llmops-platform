@@ -53,3 +53,5 @@ test: cluster-check
     scripts/argocd-check.sh {{context}}
     scripts/selfheal-check.sh {{context}}
     scripts/gateway-check.sh {{context}}
+    scripts/postgres-check.sh {{context}}
+    scripts/restore-check.sh {{context}}

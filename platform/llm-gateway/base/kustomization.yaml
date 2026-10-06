@@ -1,0 +1,9 @@
+# The LLM gateway of block 1: LiteLLM and Presidio.
+# For now, its PostgreSQL database; the application arrives in LAB-127.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: llm-gateway
+resources:
+  - postgres.yaml
+components:
+  - ../../shared/postgres-backups
