@@ -27,8 +27,6 @@ configMapGenerator:
 # Images published by llmops-gateway, both built from the same commit.
 images:
   - name: ghcr.io/mak5ens/llmops-gateway/litellm
-    newName: registry.localhost:5050/llmops-gateway/litellm
-    newTag: dev
+    newTag: sha-8c53b21
   - name: ghcr.io/mak5ens/llmops-gateway/presidio-analyzer
-    newName: registry.localhost:5050/llmops-gateway/presidio-analyzer
-    newTag: dev
+    newTag: sha-8c53b21
