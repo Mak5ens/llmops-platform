@@ -23,6 +23,14 @@ registries:
     name: registry.localhost
     host: 127.0.0.1
     hostPort: "5050"
+files:
+  # k3s 1.37 also bundles the Gateway API CRDs (standard channel), which it cannot --disable. Envoy Gateway
+  # installs its own (experimental channel) and refuses to replace standard ones, so the cluster must not
+  # have them: k3s skips a packaged manifest that has a .skip file next to it.
+  - description: skip the Gateway API CRDs bundled with k3s
+    source: gateway-api-crd.yaml.skip
+    destination: k3s-manifests/gateway-api-crd.yaml.skip
+    nodeFilters: [server:*]
 options:
   k3d:
     wait: true

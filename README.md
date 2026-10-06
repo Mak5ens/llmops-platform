@@ -56,16 +56,17 @@ Request path: team app → Envoy Gateway → LiteLLM (team key, anonymization, r
 
 ## Quick start
 
-Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which manages itself from Git. The other components come next (LAB-125 onwards).
+Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which deploys the rest from Git. Today that is ArgoCD itself and HTTP exposure (Envoy Gateway, cert-manager); databases and the gateway of block 1 come next (LAB-126, LAB-127).
 
 Requirements: [Docker](https://docs.docker.com/engine/install/), [k3d](https://k3d.io/) v5.9.0, [kubectl](https://kubernetes.io/docs/tasks/tools/), [Helm](https://helm.sh/) v4 and [just](https://just.systems/).
 The empty cluster takes about 1 GB of RAM; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
 
 ```bash
-just up          # k3d cluster, then ArgoCD and the root Application (about 1 min)
-just test        # cluster healthy, every Application synced and healthy, self-heal
-just argocd-ui   # admin password, then the UI on http://localhost:8080
-just down        # deletes the cluster, its registry and its kube context
+just up               # k3d cluster, then ArgoCD deploys every component from Git
+just test             # cluster, Applications synced and healthy, self-heal, HTTPS through the Gateway
+just ca-cert          # exports the local CA to local/ca.pem
+just argocd-password  # ArgoCD admin password; the UI is on https://argocd.localtest.me
+just down             # deletes the cluster, its registry and its kube context
 ```
 
 ArgoCD deploys what is on GitHub, not what is on your disk: it follows `main` by default. To try a branch, push it and run `REVISION=my-branch just up`.
@@ -91,15 +92,27 @@ The cluster is described in [`local/k3d.yaml`](local/k3d.yaml):
 - ArgoCD manages its own installation from [`platform/argocd/`](platform/argocd/), like any other component;
 - every Application syncs automatically, prunes what was removed from Git, and repairs manual changes (self-heal).
 
+ArgoCD compares with a server-side dry run (`controller.diff.server.side`), so the defaults the API server adds to Gateway API resources are not reported as drift.
 Locally, ArgoCD polls GitHub every minute: a pushed change reaches the cluster within about a minute and a half.
 The CI does the same on every PR: it creates the cluster, bootstraps ArgoCD from the branch under test and runs `just test`.
+
+### HTTP exposure
+
+Services are exposed through the Gateway API ([ADR-005](docs/adr/005-gateway-api-and-envoy-gateway.md)), never with an `Ingress`, which a pre-commit hook rejects:
+
+- [`platform/envoy-gateway/`](platform/envoy-gateway/) installs Envoy Gateway and the Gateway API CRDs; [`platform/cert-manager/`](platform/cert-manager/) installs cert-manager;
+- [`platform/gateway/`](platform/gateway/) holds the shared `Gateway` of the cluster, in the `gateway` namespace. Its HTTPS listener serves `*.localtest.me`, whose subdomains all resolve to 127.0.0.1; plain HTTP redirects to HTTPS;
+- each service brings its own `HTTPRoute`. Only namespaces labelled `llmops-platform/gateway-access: "true"` can attach one, so a tenant cannot take over another host name;
+- locally, certificates come from a certificate authority created by cert-manager in the cluster. `just ca-cert` exports it, to pass to curl (`--cacert local/ca.pem`) or to import in a browser. The CA is new with every cluster.
 
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
 
 - **minikube**: `minikube start --kubernetes-version=v1.37.0 --cpus=4 --memory=16g`, then `minikube tunnel` in another terminal so that LoadBalancer Services get an address.
-- **k3s server**: disable Traefik in `/etc/rancher/k3s/config.yaml` (`disable: [traefik]`) before installing, and copy `/etc/rancher/k3s/k3s.yaml` into your kubeconfig.
+- **k3s server**: before installing, disable Traefik in `/etc/rancher/k3s/config.yaml` (`disable: [traefik]`) and skip the Gateway API CRDs that k3s bundles, which conflict with Envoy Gateway's: `touch /var/lib/rancher/k3s/server/manifests/gateway-api-crd.yaml.skip`. Then copy `/etc/rancher/k3s/k3s.yaml` into your kubeconfig.
+
+On both, `*.localtest.me` resolves to 127.0.0.1: point the host names to the address of the Envoy Service instead, in `/etc/hosts` or with `curl --resolve`.
 
 Then bootstrap it: `just bootstrap <kube context>` (for example `just bootstrap minikube`).
 

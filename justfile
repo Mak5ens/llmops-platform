@@ -33,10 +33,14 @@ cluster-check:
 bootstrap ctx=context env="local" rev=revision:
     scripts/bootstrap.sh {{ctx}} {{env}} {{rev}}
 
-# Print the ArgoCD admin password and open the UI on http://localhost:8080 (port-forward)
-argocd-ui ctx=context:
+# Print the ArgoCD admin password; the UI is on https://argocd.localtest.me (trust local/ca.pem, see ca-cert)
+argocd-password ctx=context:
     @kubectl --context {{ctx}} -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo " (user admin)"
-    kubectl --context {{ctx}} -n argocd port-forward service/argocd-server 8080:80
+
+# Export the local CA to local/ca.pem, to trust *.localtest.me in curl (--cacert) or a browser
+ca-cert ctx=context:
+    kubectl --context {{ctx}} -n cert-manager get secret local-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > local/ca.pem
+    @echo "local/ca.pem written: curl --cacert local/ca.pem https://argocd.localtest.me"
 
 # Start the platform locally: k3d cluster, then ArgoCD deploys everything from Git
 up: cluster-up (bootstrap context "local" revision)
@@ -48,3 +52,4 @@ down: cluster-down
 test: cluster-check
     scripts/argocd-check.sh {{context}}
     scripts/selfheal-check.sh {{context}}
+    scripts/gateway-check.sh {{context}}

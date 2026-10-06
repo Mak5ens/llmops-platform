@@ -1,0 +1,6 @@
+# Envoy Gateway and the Gateway API CRDs it ships with (ADR-005).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Upstream manifests of the pinned version: controller, Gateway API CRDs v1.6.1 and Envoy Gateway's own CRDs.
+  - https://github.com/envoyproxy/gateway/releases/download/v1.9.2/install.yaml

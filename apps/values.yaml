@@ -12,3 +12,14 @@ components:
     wave: -10
     # Deleting this Application must never delete ArgoCD itself.
     keepResources: true
+  # Operators and their CRDs.
+  - name: envoy-gateway
+    namespace: envoy-gateway-system
+    wave: -5
+  - name: cert-manager
+    namespace: cert-manager
+    wave: -5
+  # What uses them: GatewayClass, Gateway, issuers and certificates.
+  - name: gateway
+    namespace: gateway
+    wave: 0
