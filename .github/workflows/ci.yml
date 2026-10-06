@@ -53,7 +53,7 @@ jobs:
     # Creates the local k3d cluster on the runner, bootstraps ArgoCD from the branch under test,
     # then runs the tests, as `just up` and `just test` do on a laptop (ADR-017).
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     env:
       K3D_VERSION: v5.9.0
       K3D_SHA256: 06d8f25bc3a971c4eb29e0ff08429b180402db0f4dec838c9eac427e296800a0
@@ -75,6 +75,17 @@ jobs:
         env:
           REVISION: ${{ github.head_ref || github.ref_name }}
       - run: just test
+      # The integration tests of block 1, unchanged, against the gateway deployed on the cluster: every alias, the
+      # teams' limits and budgets, the fallback, Presidio, the PII guardrail, Langfuse and the leak test.
+      - uses: actions/checkout@v7
+        with:
+          repository: Mak5ens/llmops-gateway
+          path: llmops-gateway
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv run pytest tests/integration
+        working-directory: llmops-gateway
+        env:
+          GATEWAY_STACK: kubernetes
       - name: Cluster state on failure
         if: failure()
         run: |
@@ -82,4 +93,6 @@ jobs:
           kubectl --context k3d-llmops get events -A --sort-by=.lastTimestamp
           kubectl --context k3d-llmops -n argocd get applications -o yaml
           kubectl --context k3d-llmops get clusters.postgresql.cnpg.io,backups.postgresql.cnpg.io,externalsecrets -A -o yaml
+          kubectl --context k3d-llmops -n llm-gateway logs deployment/litellm --tail=200
+          kubectl --context k3d-llmops -n llm-gateway logs job/tenants-bootstrap --tail=100
       - run: just cluster-down
