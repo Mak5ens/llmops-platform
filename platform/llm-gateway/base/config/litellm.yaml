@@ -1,0 +1,110 @@
+# Copy of config/litellm.yaml of llmops-gateway: keep both identical. On the cluster, it reaches LiteLLM through the
+# litellm-config ConfigMap, and the services it names (ollama, presidio-analyzer...) have the same names as in compose.
+#
+# LiteLLM Proxy configuration. Values written `os.environ/NAME` are read from the container environment.
+# Reference: https://docs.litellm.ai/docs/proxy/configs
+#
+# Callers only know usage aliases (chat-small, chat-large, embed). Which model serves an alias is decided here,
+# so swapping a model is a change to this file and to OLLAMA_MODELS in .env, never to client code.
+#
+# input_cost_per_token and output_cost_per_token are internal prices, in dollars: LiteLLM knows no price for
+# Ollama models, so without them every team spends $0 and budgets never trigger.
+# See docs/adr/014-internal-price-for-self-hosted-models.md.
+
+model_list:
+  # Fast and cheap: short answers, classification, extraction.
+  - model_name: chat-small
+    litellm_params:
+      model: ollama_chat/qwen2.5:0.5b
+      api_base: http://ollama:11434
+      timeout: 30
+      input_cost_per_token: 0.0000001
+      output_cost_per_token: 0.0000004
+
+  # Better answers, slower. Falls back to chat-small when it fails or times out (see router_settings).
+  # The timeout is also the worst-case time to detect a dead server: a pooled connection to a server that
+  # disappeared hangs until it expires. 20 s leaves room for about 300 tokens on CPU.
+  - model_name: chat-large
+    litellm_params:
+      model: ollama_chat/qwen2.5:1.5b
+      api_base: http://ollama-large:11434
+      timeout: 20
+      input_cost_per_token: 0.0000005
+      output_cost_per_token: 0.000002
+      # The fallback is the retry: retrying a server that did not answer doubles the wait before chat-small.
+      num_retries: 0
+
+  # Multilingual embeddings (French included), 768 dimensions.
+  - model_name: embed
+    litellm_params:
+      model: ollama/granite-embedding:278m
+      api_base: http://ollama:11434
+      timeout: 30
+      input_cost_per_token: 0.00000002
+
+router_settings:
+  # One retry on the same alias by default, then the fallback chain.
+  num_retries: 1
+  retry_after: 1
+  fallbacks:
+    - chat-large: [chat-small]
+
+# French personal data is replaced with numbered markers (<PERSON_1>, <IBAN_CODE_2>...) before the model sees it,
+# and the markers in the answer are replaced back with the real values (output_parse_pii).
+# Reference: https://docs.litellm.ai/docs/proxy/guardrails/pii_masking_v2
+# The class is LiteLLM's Presidio guardrail with its marker numbering fixed: guardrails/presidio_markers.py, mounted
+# next to this file (docs/adr/015-presidio-marker-fixes.md).
+#
+# Assigning a guardrail to a team is a LiteLLM Enterprise feature, so the open-source way is used instead:
+# - pii-fr runs on every request (default_on), except for teams whose metadata lists it in
+#   opted_out_global_guardrails (set from config/tenants.yaml). A caller cannot opt out by itself.
+# - pii-fr-on-request is the same guardrail, run only when a request asks for it: "guardrails": ["pii-fr-on-request"].
+#   It lets an opted-out team mask one request.
+guardrails:
+  - guardrail_name: pii-fr
+    litellm_params: &pii-fr
+      guardrail: presidio_markers.PresidioStableMarkers
+      mode: pre_call
+      default_on: true
+      output_parse_pii: true
+      presidio_analyzer_api_base: http://presidio-analyzer:3000
+      presidio_anonymizer_api_base: http://presidio-anonymizer:3000
+      presidio_language: fr
+      # Entities sent to the Analyzer. Dates (DATE_TIME), nationalities (NRP) and URLs are left in the prompt:
+      # the model needs dates to reason about an order or a delivery, and they identify nobody on their own.
+      pii_entities_config:
+        PERSON: MASK
+        LOCATION: MASK
+        FR_ADDRESS: MASK
+        EMAIL_ADDRESS: MASK
+        PHONE_NUMBER: MASK
+        IBAN_CODE: MASK
+        CREDIT_CARD: MASK
+        CRYPTO: MASK
+        IP_ADDRESS: MASK
+        FR_NIR: MASK
+        FR_FISCAL_NUMBER: MASK
+      # A phone number without a context word scores 0.4, a postcode and city alone 0.3.
+      presidio_score_thresholds:
+        ALL: 0.4
+  - guardrail_name: pii-fr-on-request
+    litellm_params:
+      <<: *pii-fr
+      default_on: false
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+
+litellm_settings:
+  # Every call, success or failure, is traced to Langfuse over OTLP (Langfuse v4 takes nothing else). The keys in the
+  # environment point to the Gateway project; a team's metadata points its calls to the team's own project
+  # (scripts/bootstrap_tenants.py). Langfuse prices the tokens with the internal prices above.
+  callbacks: ["langfuse_otel"]
+  # Traces keep the team, key, alias, tokens, cost and latency, never the messages: the pii-fr guardrail puts the real
+  # values back into the answer before LiteLLM logs it, and an opted-out team can still send personal data.
+  # LiteLLM's per-team or per-request switch is ignored by langfuse_otel in 1.83.14, so this one applies to all.
+  turn_off_message_logging: true
+  drop_params: true
+  # Upper bound for any call, whatever the per-model timeout.
+  request_timeout: 60

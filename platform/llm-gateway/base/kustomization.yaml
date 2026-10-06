@@ -1,9 +1,32 @@
-# The LLM gateway of block 1: LiteLLM and Presidio.
-# For now, its PostgreSQL database; the application arrives in LAB-127.
+# The LLM gateway of block 1 (llmops-gateway): LiteLLM from its official chart, Presidio Analyzer and Anonymizer,
+# two Ollama servers until vLLM (milestone 3), and the Job that creates the client teams. Images of our own come
+# from llmops-gateway on GHCR; the configuration is a copy of its config/ directory.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: llm-gateway
 resources:
+  - namespace.yaml
   - postgres.yaml
+  - secrets.yaml
+  - presidio.yaml
+  - ollama.yaml
+  - tenants-bootstrap.yaml
+  - route.yaml
+  - litellm
 components:
   - ../../shared/postgres-backups
+configMapGenerator:
+  # Copies of config/litellm.yaml and config/tenants.yaml of llmops-gateway. The service names are the same as in
+  # its compose stack (ollama, ollama-large, presidio-analyzer...), so the files are identical.
+  - name: litellm-config
+    files:
+      - config.yaml=config/litellm.yaml
+  - name: tenants-config
+    files:
+      - tenants.yaml=config/tenants.yaml
+# Images published by llmops-gateway, both built from the same commit.
+images:
+  - name: ghcr.io/mak5ens/llmops-gateway/litellm
+    newTag: sha-8c53b21
+  - name: ghcr.io/mak5ens/llmops-gateway/presidio-analyzer
+    newTag: sha-8c53b21

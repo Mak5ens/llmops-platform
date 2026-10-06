@@ -1,4 +1,4 @@
-# The S3 identities of SeaweedFS, rendered from the same secret the PostgreSQL clusters use.
+# The S3 identities of SeaweedFS, rendered from the keys the clients use: one per client, each limited to its bucket.
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
@@ -17,11 +17,23 @@ spec:
             "identities": [
               {
                 "name": "postgres-backups",
-                "credentials": [{"accessKey": "{{ .ACCESS_KEY_ID }}", "secretKey": "{{ .ACCESS_SECRET_KEY }}"}],
-                "actions": ["Read", "Write", "List", "Tagging"]
+                "credentials": [{"accessKey": "{{ .backup_key }}", "secretKey": "{{ .backup_secret }}"}],
+                "actions": ["Read:postgres-backups", "Write:postgres-backups", "List:postgres-backups",
+                            "Tagging:postgres-backups"]
+              },
+              {
+                "name": "langfuse",
+                "credentials": [{"accessKey": "{{ .langfuse_key }}", "secretKey": "{{ .langfuse_secret }}"}],
+                "actions": ["Read:langfuse", "Write:langfuse", "List:langfuse", "Tagging:langfuse"]
               }
             ]
           }
-  dataFrom:
-    - extract:
-        key: s3-backup
+  data:
+    - secretKey: backup_key
+      remoteRef: {key: s3-backup, property: ACCESS_KEY_ID}
+    - secretKey: backup_secret
+      remoteRef: {key: s3-backup, property: ACCESS_SECRET_KEY}
+    - secretKey: langfuse_key
+      remoteRef: {key: langfuse-s3, property: ACCESS_KEY_ID}
+    - secretKey: langfuse_secret
+      remoteRef: {key: langfuse-s3, property: ACCESS_SECRET_KEY}

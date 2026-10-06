@@ -56,15 +56,16 @@ Request path: team app → Envoy Gateway → LiteLLM (team key, anonymization, r
 
 ## Quick start
 
-Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which deploys the rest from Git. Today that is ArgoCD itself, HTTP exposure (Envoy Gateway, cert-manager), secrets (External Secrets) and the PostgreSQL databases of the gateway and Langfuse (CloudNativePG); the gateway of block 1 comes next (LAB-127).
+Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which deploys the rest from Git. Today that is ArgoCD itself, HTTP exposure (Envoy Gateway, cert-manager), secrets (External Secrets), PostgreSQL (CloudNativePG), and the gateway of block 1 with Presidio, Ollama and Langfuse.
 
 Requirements: [Docker](https://docs.docker.com/engine/install/), [k3d](https://k3d.io/) v5.9.0, [kubectl](https://kubernetes.io/docs/tasks/tools/), [Helm](https://helm.sh/) v4 and [just](https://just.systems/).
-The empty cluster takes about 1 GB of RAM, the platform as it stands about 5.5 GB; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
+The empty cluster takes about 1 GB of RAM, the platform as it stands about 13 GB, of which 3 GB for Presidio and LiteLLM and 2 GB for Langfuse; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
 
 ```bash
 just up               # k3d cluster, then ArgoCD deploys every component from Git
 just test             # cluster, Applications, self-heal, HTTPS, PostgreSQL failover and restore
 just ca-cert          # exports the local CA to local/ca.pem
+just test-gateway     # the integration tests of block 1 against the cluster (needs ../llmops-gateway)
 just argocd-password  # ArgoCD admin password; the UI is on https://argocd.localtest.me
 just down             # deletes the cluster, its registry and its kube context
 ```
@@ -114,6 +115,22 @@ Services are exposed through the Gateway API ([ADR-005](docs/adr/005-gateway-api
 - applications connect to their database with the `<cluster>-app` Secret that CloudNativePG creates.
 
 `just test` deletes the primary of `litellm-db` and checks that the last commit survives, then restores a fresh backup into a new cluster from S3 alone.
+
+### The gateway of block 1
+
+The gateway of [`llmops-gateway`](https://github.com/Mak5ens/llmops-gateway) runs on the cluster with the same behavior as in its Docker Compose stack, which stays the quickest demo without Kubernetes:
+
+- [`platform/llm-gateway/`](platform/llm-gateway/): LiteLLM from its official Helm chart, on `https://llm.localtest.me`; Presidio Analyzer and Anonymizer; two Ollama servers until vLLM (milestone 3); and the `tenants-bootstrap` Job, which ArgoCD runs after every sync to create the client teams, their keys and their Langfuse projects;
+- [`platform/langfuse/`](platform/langfuse/): Langfuse from its official chart, on `https://langfuse.localtest.me`, with its database on CloudNativePG, its events and media on SeaweedFS, and a single-node ClickHouse (the chart's needs the ClickHouse operator);
+- the images of our own come from llmops-gateway on GHCR: the French Presidio Analyzer, and LiteLLM with the guardrail class and the bootstrap scripts. `config/litellm.yaml` and `config/tenants.yaml` are copies of llmops-gateway's: the services have the same names as in Compose, so the files are identical;
+- every secret (master key, team keys, Langfuse keys and accounts) is written once to `local-secrets` by `just bootstrap`; `just gateway-secrets` prints the ones you need to call the gateway or sign in to Langfuse.
+
+The integration tests of block 1 run unchanged against the cluster, in the CI after `just test` and locally with `just test-gateway`: 46 tests, about 10 minutes, most of it waiting for ArgoCD to put things back after the fallback and leak tests.
+
+Two things the move taught:
+
+- Envoy cuts a request after 15 s by default. A `chat-large` call that falls back to `chat-small` takes up to 20 s, so the route to LiteLLM has a 90 s timeout.
+- Kustomize's namespace transformer leaves the resources rendered from a Helm chart alone. Without a namespace, the LiteLLM Deployment kept the name of its ConfigMap without the content hash, and would not restart on a configuration change. A patch sets the namespace.
 
 ### On minikube or a k3s server
 

@@ -32,7 +32,7 @@ spec:
           args:
             - mini
             - -dir=/data
-            - -bucket=postgres-backups
+            - -bucket=postgres-backups,langfuse
             - -s3.config=/etc/seaweedfs/s3.json
             - -webdav=false
             - -admin.ui=false

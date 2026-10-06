@@ -1,4 +1,4 @@
-# SeaweedFS, the S3 store of the local environment for PostgreSQL backups (ADR-018).
+# SeaweedFS, the S3 store of the local environment: PostgreSQL backups (ADR-018) and Langfuse events and media.
 # On Kapsule, Scaleway Object Storage replaces it: this component is not deployed there.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
