@@ -24,6 +24,11 @@ for workload in $("${kc[@]}" -n argocd get deployments,statefulsets -o name); do
   "${kc[@]}" -n argocd rollout status "$workload" --timeout=300s
 done
 
+if [[ $env == local ]]; then
+  echo "== Local secrets"
+  scripts/seed-local-secrets.sh "$context"
+fi
+
 echo "== Root Application (env $env, revision $revision)"
 helm template root apps --set-string "env=$env,revision=$revision" --show-only templates/root.yaml \
   | "${kc[@]}" apply -f -

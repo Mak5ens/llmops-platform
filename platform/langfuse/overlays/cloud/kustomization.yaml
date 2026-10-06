@@ -1,0 +1,6 @@
+# Kapsule (milestone 2.3, LAB-132): backups go to a Scaleway Object Storage bucket
+# (endpoint https://s3.fr-par.scw.cloud), with a key written to Secret Manager by Terraform.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base

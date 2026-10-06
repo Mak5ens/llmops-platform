@@ -1,0 +1,7 @@
+# Backups of the PostgreSQL clusters of a namespace: where they go (ObjectStore) and the S3 key
+# to write there (ExternalSecret). Included by every component that runs a database.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - objectstore.yaml
+  - s3-credentials.yaml

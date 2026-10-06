@@ -1,0 +1,7 @@
+# Local backend: Kubernetes Secrets in the local-secrets namespace, filled with random values
+# by scripts/seed-local-secrets.sh (run by `just bootstrap`). Never in Git.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - local-secrets.yaml

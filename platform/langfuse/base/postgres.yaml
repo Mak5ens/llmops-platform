@@ -1,0 +1,48 @@
+# Primary and replica on different nodes. CloudNativePG promotes the replica if the primary fails
+# and creates the "langfuse-db-app" Secret the application connects with (ADR-018).
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: langfuse-db
+spec:
+  instances: 2
+  postgresql:
+    # A commit returns once a replica has it, so a failover loses no committed transaction.
+    # "preferred": with no replica up, the primary keeps accepting writes instead of blocking.
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: preferred
+  bootstrap:
+    initdb:
+      database: langfuse
+      owner: langfuse
+  storage:
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: backups
+---
+# A base backup every night at 03:00, and one as soon as the cluster exists; WAL is archived
+# continuously in between, so any point in time of the last 7 days can be restored.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: langfuse-db-daily
+spec:
+  schedule: "0 0 3 * * *"
+  immediate: true
+  backupOwnerReference: self
+  cluster:
+    name: langfuse-db
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

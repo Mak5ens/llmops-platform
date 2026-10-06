@@ -1,0 +1,7 @@
+# CloudNativePG, the PostgreSQL operator, and its Barman Cloud plugin, which archives WAL and
+# base backups to S3 (ADR-018). The plugin gets its TLS certificates from cert-manager.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.30.1/cnpg-1.30.1.yaml
+  - https://github.com/cloudnative-pg/plugin-barman-cloud/releases/download/v0.15.1/manifest.yaml

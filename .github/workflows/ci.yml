@@ -53,7 +53,7 @@ jobs:
     # Creates the local k3d cluster on the runner, bootstraps ArgoCD from the branch under test,
     # then runs the tests, as `just up` and `just test` do on a laptop (ADR-017).
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       K3D_VERSION: v5.9.0
       K3D_SHA256: 06d8f25bc3a971c4eb29e0ff08429b180402db0f4dec838c9eac427e296800a0
@@ -81,4 +81,5 @@ jobs:
           kubectl --context k3d-llmops get pods -A -o wide
           kubectl --context k3d-llmops get events -A --sort-by=.lastTimestamp
           kubectl --context k3d-llmops -n argocd get applications -o yaml
+          kubectl --context k3d-llmops get clusters.postgresql.cnpg.io,backups.postgresql.cnpg.io,externalsecrets -A -o yaml
       - run: just cluster-down

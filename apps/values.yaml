@@ -6,6 +6,7 @@ repoURL: https://github.com/Mak5ens/llmops-platform.git
 
 # One ArgoCD Application per component, deployed from platform/<name>/overlays/<env>.
 # Waves order the deployment: CRDs and operators first, then what uses them.
+# `envs` limits a component to some environments (all by default).
 components:
   - name: argocd
     namespace: argocd
@@ -19,7 +20,28 @@ components:
   - name: cert-manager
     namespace: cert-manager
     wave: -5
-  # What uses them: GatewayClass, Gateway, issuers and certificates.
+  - name: external-secrets
+    namespace: external-secrets
+    wave: -5
+  # Operators that need cert-manager or External Secrets.
+  - name: cloudnative-pg
+    namespace: cnpg-system
+    wave: -3
+  - name: secret-store
+    namespace: external-secrets
+    wave: -3
+  # Local S3 for backups; Scaleway Object Storage in the cloud.
+  - name: object-storage
+    namespace: object-storage
+    wave: -2
+    envs: [local]
+  # What uses them: GatewayClass, Gateway, issuers and certificates, then the applications.
   - name: gateway
     namespace: gateway
+    wave: 0
+  - name: llm-gateway
+    namespace: llm-gateway
+    wave: 0
+  - name: langfuse
+    namespace: langfuse
     wave: 0

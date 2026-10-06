@@ -16,3 +16,6 @@ data:
       end
     end
     return hs
+  # Components installed from a Helm chart declare it in their kustomization (helmCharts),
+  # so every component stays a Kustomize directory with its local and cloud overlays.
+  kustomize.buildOptions: --enable-helm

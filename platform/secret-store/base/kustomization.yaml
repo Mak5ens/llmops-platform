@@ -1,0 +1,5 @@
+# The ClusterSecretStore "platform", which every ExternalSecret reads from (ADR-019).
+# Its backend depends on the environment: see the overlays.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
