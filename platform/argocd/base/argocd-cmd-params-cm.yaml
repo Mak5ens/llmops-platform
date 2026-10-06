@@ -5,3 +5,6 @@ metadata:
 data:
   # TLS ends at Envoy Gateway (ADR-005); the ArgoCD server behind it speaks plain HTTP.
   server.insecure: "true"
+  # Compare with a server-side dry run rather than in the controller: the API server fills defaults
+  # into Gateway API resources (path match, backend kind, weight), which a client-side diff reports as drift.
+  controller.diff.server.side: "true"
