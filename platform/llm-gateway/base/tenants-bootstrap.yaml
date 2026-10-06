@@ -31,12 +31,13 @@ spec:
           envFrom:
             - secretRef:
                 name: gateway-env
+          # The LiteLLM image's Python and Prisma client: OOMKilled at 512 MiB.
           resources:
             requests:
               cpu: 50m
-              memory: 256Mi
-            limits:
               memory: 512Mi
+            limits:
+              memory: 1536Mi
           volumeMounts:
             - name: tenants
               mountPath: /config/tenants
