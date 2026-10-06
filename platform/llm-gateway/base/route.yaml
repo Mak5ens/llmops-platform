@@ -11,6 +11,10 @@ spec:
   hostnames:
     - llm.localtest.me
   rules:
-    - backendRefs:
+    # Envoy cuts a request after 15 s by default. A chat-large call that falls back to chat-small takes up to 20 s
+    # (its timeout in config/litellm.yaml) plus the answer; LiteLLM caps any call at 60 s (request_timeout).
+    - timeouts:
+        request: 90s
+      backendRefs:
         - name: litellm
           port: 4000
