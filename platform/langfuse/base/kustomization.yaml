@@ -11,6 +11,7 @@ resources:
   - route.yaml
 components:
   - ../../shared/postgres-backups
+  - ../../shared/postgres-monitoring
 helmCharts:
   - name: langfuse
     repo: https://langfuse.github.io/langfuse-k8s

@@ -3,6 +3,7 @@ extends: default
 # Helm templates are not YAML until rendered.
 ignore: |
   apps/templates/
+  platform/monitoring/base/slo/*.rules.yaml
 
 rules:
   document-start: disable
