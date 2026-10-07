@@ -1,0 +1,11 @@
+# Dashboards as code: each JSON file becomes a ConfigMap labelled grafana_dashboard=1, which Grafana's sidecar loads.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+configMapGenerator:
+  - name: dashboard-gateway
+    files:
+      - gateway.json

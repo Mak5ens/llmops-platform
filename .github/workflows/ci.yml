@@ -71,6 +71,8 @@ jobs:
       - run: just cluster-up
       # ArgoCD deploys from the branch under test, which is already on GitHub.
       # Passed through env, never interpolated into the script: a branch name is user input.
+      # Memory of the runner every 30 s while the platform deploys, in the background: where the 16 GB go.
+      - run: (while true; do echo "$(date +%T) $(free -m | awk '/Mem:/ {print $3 " MB used, " $7 " MB available"}')"; sleep 30; done) > memory.log 2>&1 &
       - run: just bootstrap k3d-llmops local "$REVISION"
         env:
           REVISION: ${{ github.head_ref || github.ref_name }}
@@ -86,13 +88,25 @@ jobs:
         working-directory: llmops-gateway
         env:
           GATEWAY_STACK: kubernetes
+      # The whole platform has to fit on the runner (16 GB): print what the cluster takes, success or failure.
+      - name: Memory
+        if: always()
+        run: |
+          free -m
+          docker stats --no-stream --format '{{.Name}} {{.MemUsage}}'
+          cat memory.log
       - name: Cluster state on failure
         if: failure()
+        # Each command may fail on a cluster that is gone: keep going, to print everything that can be printed.
         run: |
+          set +e
+          docker ps -a --format '{{.Names}} {{.Status}}'
+          sudo dmesg | grep -i -E 'out of memory|oom-kill|killed process' | tail -20
           kubectl --context k3d-llmops get pods -A -o wide
-          kubectl --context k3d-llmops get events -A --sort-by=.lastTimestamp
+          kubectl --context k3d-llmops get events -A --sort-by=.lastTimestamp | tail -80
           kubectl --context k3d-llmops -n argocd get applications -o yaml
           kubectl --context k3d-llmops get clusters.postgresql.cnpg.io,backups.postgresql.cnpg.io,externalsecrets -A -o yaml
           kubectl --context k3d-llmops -n llm-gateway logs deployment/litellm --tail=200
           kubectl --context k3d-llmops -n llm-gateway logs job/tenants-bootstrap --tail=100
+          exit 0
       - run: just cluster-down

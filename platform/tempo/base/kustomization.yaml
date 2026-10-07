@@ -1,0 +1,14 @@
+# Traces: Tempo in a single process, blocks on a volume, 24 h of retention (ADR-020). Its metrics generator turns the
+# spans into request rate and latency metrics, with the trace ID of a sample of requests (exemplars), pushed to
+# Prometheus: a point of a latency graph opens its trace.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+helmCharts:
+  - name: tempo
+    repo: https://grafana-community.github.io/helm-charts
+    version: 3.1.0
+    releaseName: tempo
+    namespace: monitoring
+    valuesFile: values.yaml
+    skipTests: true

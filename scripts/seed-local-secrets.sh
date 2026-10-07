@@ -47,3 +47,5 @@ seed langfuse-internal "SALT=$(hex 32)" "ENCRYPTION_KEY=$(hex 32)" "NEXTAUTH_SEC
 seed langfuse-db "username=langfuse" "password=$(hex 16)"
 # S3 key of Langfuse's raw events and media.
 seed langfuse-s3 "ACCESS_KEY_ID=$(hex 10)" "ACCESS_SECRET_KEY=$(hex 20)"
+# Grafana's admin account (LAB-128).
+seed grafana "admin-user=admin" "admin-password=$(hex 16)"

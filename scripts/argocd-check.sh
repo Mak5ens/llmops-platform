@@ -13,7 +13,9 @@ ready=""
 echo "== ArgoCD Applications"
 while true; do
   # name sync health, one line per Application; empty while the root has not created its children.
-  status=$("${kc[@]}" get applications -o jsonpath='{range .items[*]}{.metadata.name} {.status.sync.status} {.status.health.status}{"\n"}{end}')
+  # While dozens of pods start, the API server can be too busy to answer (seen on 4-CPU CI runners): a failed call is
+  # retried until the deadline, not fatal.
+  status=$("${kc[@]}" get applications -o jsonpath='{range .items[*]}{.metadata.name} {.status.sync.status} {.status.health.status}{"\n"}{end}' 2>/dev/null) || status=""
   # Report each Application the first time it is synced and healthy.
   while read -r name _; do
     [[ -n $name && " $ready " != *" $name "* ]] || continue

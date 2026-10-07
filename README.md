@@ -56,14 +56,14 @@ Request path: team app → Envoy Gateway → LiteLLM (team key, anonymization, r
 
 ## Quick start
 
-Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which deploys the rest from Git. Today that is ArgoCD itself, HTTP exposure (Envoy Gateway, cert-manager), secrets (External Secrets), PostgreSQL (CloudNativePG), and the gateway of block 1 with Presidio, Ollama and Langfuse.
+Milestone 2.1 is under way: `just up` creates the local cluster and installs ArgoCD, which deploys the rest from Git. Today that is ArgoCD itself, HTTP exposure (Envoy Gateway, cert-manager), secrets (External Secrets), PostgreSQL (CloudNativePG), the gateway of block 1 with Presidio, Ollama and Langfuse, and observability (Prometheus, Grafana, Loki, Tempo, OpenTelemetry Collector).
 
 Requirements: [Docker](https://docs.docker.com/engine/install/), [k3d](https://k3d.io/) v5.9.0, [kubectl](https://kubernetes.io/docs/tasks/tools/), [Helm](https://helm.sh/) v4 and [just](https://just.systems/).
-The empty cluster takes about 1 GB of RAM, the platform as it stands about 13 GB, of which 3 GB for Presidio and LiteLLM and 2 GB for Langfuse; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
+The empty cluster takes about 1 GB of RAM, the platform as it stands about 13 to 14 GB, of which 3 GB for Presidio and LiteLLM, 2 GB for Langfuse and about 1.5 GB for observability; the target for the whole platform is a machine like a GitHub runner, 4 cores and 16 GB.
 
 ```bash
 just up               # k3d cluster, then ArgoCD deploys every component from Git
-just test             # cluster, Applications, self-heal, HTTPS, PostgreSQL failover and restore
+just test             # cluster, Applications, self-heal, HTTPS, PostgreSQL failover and restore, latency → trace → logs
 just ca-cert          # exports the local CA to local/ca.pem
 just test-gateway     # the integration tests of block 1 against the cluster (needs ../llmops-gateway)
 just argocd-password  # ArgoCD admin password; the UI is on https://argocd.localtest.me
@@ -132,6 +132,18 @@ Two things the move taught:
 - Envoy cuts a request after 15 s by default. A `chat-large` call that falls back to `chat-small` takes up to 20 s, so the route to LiteLLM has a 90 s timeout.
 - Kustomize's namespace transformer leaves the resources rendered from a Helm chart alone. Without a namespace, the LiteLLM Deployment kept the name of its ConfigMap without the content hash, and would not restart on a configuration change. A patch sets the namespace.
 
+### Observability
+
+Metrics, logs and traces lead to one another ([ADR-020](docs/adr/020-observability-stack.md)). Grafana is on `https://grafana.localtest.me` (`just grafana-password`):
+
+- [`platform/monitoring/`](platform/monitoring/): kube-prometheus-stack (Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics), the `Gateway` dashboard and the alert rules, in Git. Every `ServiceMonitor`, `PodMonitor` and `PrometheusRule` of the cluster is picked up;
+- [`platform/loki/`](platform/loki/) and [`platform/tempo/`](platform/tempo/): one process each, 48 h of logs and 24 h of traces. Tempo's metrics generator turns spans into rate and latency metrics, with the trace ID of sampled requests (exemplars);
+- [`platform/otel-collector/`](platform/otel-collector/): one OpenTelemetry Collector per node, the single entry point of telemetry. It reads the pod logs of its node, receives OTLP from applications, adds the Kubernetes attributes, and sends logs to Loki, traces to Tempo and metrics to Prometheus;
+- Envoy traces every request through the Gateway and sends its access logs over OTLP, with the trace ID.
+
+On the `Gateway` dashboard, a dot on the latency graph is an exemplar: a click opens the request's trace in Tempo, and *Logs for this span* opens its access log in Loki. `scripts/observability-check.sh` follows these two clicks through the APIs on every run of `just test`.
+The control plane is not scraped: it is embedded in k3s and managed on Kapsule. The rules that would fire for its missing targets are off.
+
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
@@ -177,7 +189,7 @@ GPUs are rented on Scaleway for a few hours for the final measurements, then `te
 
 ## Architecture decisions
 
-This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse, the multi-repo layout, k3d for the local cluster, CloudNativePG and External Secrets. Repo-specific ADRs stay in their own repo.
+This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse, the multi-repo layout, k3d for the local cluster, CloudNativePG, External Secrets and the observability stack. Repo-specific ADRs stay in their own repo.
 
 ## Part of an internal AI platform
 

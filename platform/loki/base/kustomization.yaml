@@ -1,0 +1,13 @@
+# Logs: Loki in a single process with its index and chunks on a volume, 48 h of retention (ADR-020). Logs arrive over
+# OTLP from the OpenTelemetry Collector: pod logs, and Envoy's access logs with the trace ID of each request.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+helmCharts:
+  - name: loki
+    repo: https://grafana-community.github.io/helm-charts
+    version: 18.13.8
+    releaseName: loki
+    namespace: monitoring
+    valuesFile: values.yaml
+    skipTests: true

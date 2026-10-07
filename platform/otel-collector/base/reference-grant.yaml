@@ -1,0 +1,15 @@
+# Lets Envoy Gateway send Envoy's traces and access logs to the collector, from the EnvoyProxy of the gateway
+# namespace to a Service of this one.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: envoy-telemetry
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      namespace: gateway
+  to:
+    - group: ""
+      kind: Service
+      name: otel-collector

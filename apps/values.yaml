@@ -30,6 +30,21 @@ components:
   - name: secret-store
     namespace: external-secrets
     wave: -3
+  # Metrics, alerts, Grafana and the monitoring CRDs (ServiceMonitor, PodMonitor, PrometheusRule) that the
+  # components after it use.
+  - name: monitoring
+    namespace: monitoring
+    wave: -3
+  # Logs and traces, then the collector that feeds them.
+  - name: loki
+    namespace: monitoring
+    wave: -2
+  - name: tempo
+    namespace: monitoring
+    wave: -2
+  - name: otel-collector
+    namespace: monitoring
+    wave: -1
   # Local S3 for backups; Scaleway Object Storage in the cloud.
   - name: object-storage
     namespace: object-storage

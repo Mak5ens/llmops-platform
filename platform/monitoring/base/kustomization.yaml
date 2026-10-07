@@ -1,0 +1,20 @@
+# Metrics, alerts and dashboards: kube-prometheus-stack (Prometheus Operator, Prometheus, Alertmanager, Grafana,
+# node-exporter, kube-state-metrics), sized for the local cluster (ADR-020). Loki, Tempo and the OpenTelemetry
+# Collector are components of their own, in the same namespace.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - namespace.yaml
+  - grafana-admin.yaml
+  - dashboards
+  - alerts.yaml
+helmCharts:
+  - name: kube-prometheus-stack
+    repo: https://prometheus-community.github.io/helm-charts
+    version: 92.0.0
+    releaseName: kps
+    namespace: monitoring
+    valuesFile: values.yaml
+    includeCRDs: true
+    skipTests: true

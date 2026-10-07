@@ -1,0 +1,21 @@
+tempo:
+  reportingEnabled: false
+  retention: 24h
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 1Gi}
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: http://kps-prometheus.monitoring.svc:9090/api/v1/write
+    storage:
+      path: /var/tempo/metrics
+      remote_write:
+        - url: http://kps-prometheus.monitoring.svc:9090/api/v1/write
+          send_exemplars: true
+  overrides:
+    defaults:
+      metrics_generator:
+        processors: [span-metrics, service-graphs]
+persistence:
+  enabled: true
+  size: 5Gi
