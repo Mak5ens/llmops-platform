@@ -7,7 +7,6 @@ namespace: monitoring
 resources:
   - namespace.yaml
   - grafana-admin.yaml
-  - route.yaml
   - dashboards
   - alerts.yaml
 helmCharts:

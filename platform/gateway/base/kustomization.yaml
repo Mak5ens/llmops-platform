@@ -1,5 +1,5 @@
 # The shared HTTP entry point of the cluster: one GatewayClass, one Gateway, and the routes of
-# the components installed before the Gateway API existed (ArgoCD). Other components bring their own HTTPRoute.
+# the components installed before the Gateway (ArgoCD, monitoring). Other components bring their own HTTPRoute.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -8,4 +8,5 @@ resources:
   - gateway.yaml
   - https-redirect.yaml
   - argocd-route.yaml
+  - grafana-route.yaml
   - envoy-metrics.yaml

@@ -1,7 +1,10 @@
+# Lives here rather than in platform/monitoring: monitoring is installed before the Gateway exists (it brings the
+# CRDs that other components use), and a route without its Gateway never becomes healthy, which would block the sync.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: grafana
+  namespace: monitoring
 spec:
   parentRefs:
     - name: platform
