@@ -65,3 +65,4 @@ test: cluster-check
     scripts/gateway-check.sh {{context}}
     scripts/postgres-check.sh {{context}}
     scripts/restore-check.sh {{context}}
+    scripts/observability-check.sh {{context}}

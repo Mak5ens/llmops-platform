@@ -1,0 +1,15 @@
+# Grafana's admin account, from the store "platform" (ADR-019).
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: grafana-admin
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: platform
+  target:
+    name: grafana-admin
+  dataFrom:
+    - extract:
+        key: grafana

@@ -1,0 +1,31 @@
+# Alerts on the gateway, from the span metrics of Envoy's traces. Thresholds for now; LAB-129 replaces them with
+# SLOs and error budget burn rate alerts (Sloth).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gateway
+spec:
+  groups:
+    - name: gateway
+      rules:
+        - alert: GatewayErrorRateHigh
+          expr: |
+            sum(rate(traces_spanmetrics_calls_total{service="platform.gateway", status_code="STATUS_CODE_ERROR"}[5m]))
+              / sum(rate(traces_spanmetrics_calls_total{service="platform.gateway"}[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: More than 5 % of the requests through the Gateway fail
+            description: "{{ $value | humanizePercentage }} of the requests failed over the last 5 minutes."
+        - alert: GatewayLatencyHigh
+          # LLM calls are slow by nature: 30 s at p95 means calls are hitting the models' timeouts.
+          expr: |
+            histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service="platform.gateway"}[5m])))
+              > 30
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: The p95 latency through the Gateway is above 30 s
+            description: "p95 latency is {{ $value | humanizeDuration }} over the last 5 minutes."

@@ -1,0 +1,16 @@
+# The single entry point of telemetry (ADR-020): an OpenTelemetry Collector on every node, which reads the pod logs
+# of its node, receives OTLP traces, metrics and logs from applications (Envoy today), adds the Kubernetes
+# attributes (namespace, pod, deployment), and sends logs to Loki, traces to Tempo and metrics to Prometheus.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - reference-grant.yaml
+helmCharts:
+  - name: opentelemetry-collector
+    repo: https://open-telemetry.github.io/opentelemetry-helm-charts
+    version: 0.175.1
+    releaseName: otel-collector
+    namespace: monitoring
+    valuesFile: values.yaml
+    skipTests: true

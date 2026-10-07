@@ -1,0 +1,129 @@
+# Values of kube-prometheus-stack. Everything is sized for the local cluster and the CI runner (16 GB for the whole
+# platform): short retention, requests and limits on every pod.
+fullnameOverride: kps
+
+# The control plane is not reachable on k3s (embedded in one binary) nor on Kapsule (managed): no scraping, and no
+# rules that would fire because their targets are missing.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+defaultRules:
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeProxy: false
+
+prometheus:
+  prometheusSpec:
+    retention: 2d
+    retentionSize: 2GB
+    # Tempo's metrics generator pushes its span metrics here.
+    enableRemoteWriteReceiver: true
+    # Metrics of applications, over OTLP from the OpenTelemetry Collector.
+    enableOTLPReceiver: true
+    # Keeps the trace IDs (exemplars) that come with Tempo's span metrics: a point of a latency graph links to its trace.
+    enableFeatures:
+      - exemplar-storage
+    # Every ServiceMonitor, PodMonitor and PrometheusRule of the cluster, not only those of this release.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    resources:
+      requests: {cpu: 200m, memory: 512Mi}
+      limits: {memory: 1536Mi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  alertmanagerSpec:
+    retention: 24h
+    resources:
+      requests: {cpu: 10m, memory: 32Mi}
+      limits: {memory: 128Mi}
+
+prometheusOperator:
+  resources:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits: {memory: 256Mi}
+
+kube-state-metrics:
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {memory: 128Mi}
+
+prometheus-node-exporter:
+  resources:
+    requests: {cpu: 10m, memory: 16Mi}
+    limits: {memory: 64Mi}
+
+grafana:
+  fullnameOverride: grafana
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  grafana.ini:
+    server:
+      root_url: https://grafana.localtest.me
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 384Mi}
+  sidecar:
+    # Dashboards are ConfigMaps labelled grafana_dashboard=1, from any namespace (dashboards/).
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+    datasources:
+      uid: prometheus
+      # Exemplars carry the trace ID: a click on one opens the trace in Tempo.
+      exemplarTraceIdDestinations:
+        datasourceUid: tempo
+        traceIdLabelName: trace_id
+  # Logs and traces, linked both ways with metrics: metric → trace (exemplar), trace → logs (trace ID),
+  # log → trace (trace ID in the log's metadata).
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      url: http://loki.monitoring.svc:3100
+      jsonData:
+        derivedFields:
+          - name: Trace
+            matcherType: label
+            matcherRegex: trace_id
+            datasourceUid: tempo
+            url: "$${__value.raw}"
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      url: http://tempo.monitoring.svc:3200
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: -5m
+          spanEndTimeShift: 5m
+          customQuery: true
+          query: '{service_name=~".+"} | trace_id="$${__trace.traceId}"'
+        tracesToMetrics:
+          datasourceUid: prometheus
+        serviceMap:
+          datasourceUid: prometheus
+        nodeGraph:
+          enabled: true
+        lokiSearch:
+          datasourceUid: loki

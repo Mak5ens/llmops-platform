@@ -8,3 +8,4 @@ resources:
   - gateway.yaml
   - https-redirect.yaml
   - argocd-route.yaml
+  - envoy-metrics.yaml
