@@ -5,7 +5,7 @@
 
 **A production-grade Kubernetes platform for LLM workloads: built by Terraform, deployed from Git, observed end to end, and able to scale GPU inference to zero without blowing the budget.**
 
-> Status: under construction, milestone 2.1 (local cluster and GitOps) in progress. See the [roadmap](#roadmap).
+> Status: under construction. Milestone 2.1 (local cluster and GitOps) is done; next, 2.2 (observability, SLO and supply chain). See the [roadmap](#roadmap).
 
 ## Why
 
@@ -136,10 +136,19 @@ Two things the move taught:
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
 
-- **minikube**: `minikube start --kubernetes-version=v1.37.0 --cpus=4 --memory=16g`, then `minikube tunnel` in another terminal so that LoadBalancer Services get an address.
+- **minikube** (checked on 2026-10-07 with minikube v1.39.0, a single node): `minikube start --kubernetes-version=v1.37.1 --cpus=8 --memory=16g`, then `minikube tunnel` in another terminal so that LoadBalancer Services get an address; without it, the Gateway stays `AddressNotAssigned` and never becomes healthy. `minikube start` makes `minikube` the current kube context.
 - **k3s server**: before installing, disable Traefik in `/etc/rancher/k3s/config.yaml` (`disable: [traefik]`) and skip the Gateway API CRDs that k3s bundles, which conflict with Envoy Gateway's: `touch /var/lib/rancher/k3s/server/manifests/gateway-api-crd.yaml.skip`. Then copy `/etc/rancher/k3s/k3s.yaml` into your kubeconfig.
 
 On both, `*.localtest.me` resolves to 127.0.0.1: point the host names to the address of the Envoy Service instead, in `/etc/hosts` or with `curl --resolve`.
+On minikube, the tunnel asks for sudo to bind ports 80 and 443 on 127.0.0.1. Without it, use the NodePort of Envoy's HTTPS listener on the node's address:
+
+```bash
+port=$(kubectl --context minikube -n envoy-gateway-system get svc \
+  -o jsonpath='{.items[?(@.spec.type=="LoadBalancer")].spec.ports[?(@.port==443)].nodePort}')
+curl --cacert local/ca.pem --resolve "llm.localtest.me:$port:$(minikube ip)" "https://llm.localtest.me:$port/health/liveliness"
+```
+
+There, every Application is synced and healthy, the PostgreSQL failover takes 20 s as on k3d, and ArgoCD, LiteLLM and Langfuse answer over HTTPS with the local CA's certificate.
 
 Then bootstrap it: `just bootstrap <kube context>` (for example `just bootstrap minikube`).
 
@@ -154,7 +163,7 @@ just lint
 
 ### Milestone 2: Kubernetes in GitOps
 
-- [ ] **2.1 Local cluster and GitOps**: k3d, ArgoCD app of apps, Envoy Gateway, cert-manager, CloudNativePG, External Secrets. The block 1 gateway deployed from Git.
+- [x] **2.1 Local cluster and GitOps**: k3d, ArgoCD app of apps, Envoy Gateway, cert-manager, CloudNativePG, External Secrets. The block 1 gateway deployed from Git.
 - [ ] **2.2 Observability, SLO and supply chain**: Prometheus, Loki, Tempo, OpenTelemetry. Two Sloth SLOs with alerts and runbooks. Trivy, Syft, cosign in CI; Renovate.
 - [ ] **2.3 Cloud cluster with Terraform**: the same platform on Scaleway Kapsule, estimated monthly cost. Article 2.
 
