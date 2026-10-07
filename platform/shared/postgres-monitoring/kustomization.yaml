@@ -1,0 +1,6 @@
+# Metrics of the PostgreSQL clusters of a namespace (replication lag, connections, WAL archiving, backups), scraped by
+# Prometheus for the CloudNativePG dashboard. Included by every component that runs a database.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - podmonitor.yaml

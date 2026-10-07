@@ -1,0 +1,68 @@
+# SLOs of the LLM gateway (ADR-021), in Sloth's format. Not deployed as is: `just slo` generates the Prometheus rules
+# into platform/monitoring/base/slo/, and a pre-commit hook checks they are up to date.
+#
+# The SLIs come from Envoy, on the route to LiteLLM (cluster httproute/llm-gateway/litellm/rule/0): what a client team
+# sees, counted for every request, whatever the trace sampling.
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: llm-gateway
+  namespace: monitoring
+spec:
+  service: llm-gateway
+  labels:
+    owner: platform
+  slos:
+    - name: availability
+      objective: 99.5
+      description: >-
+        Requests to the gateway that do not fail on its side: 5xx responses are errors, 4xx are not (a refused key, a
+        budget exceeded or a rate limit are the gateway doing its job).
+      sli:
+        events:
+          errorQuery: >-
+            sum(rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0",
+            envoy_response_code_class="5"}[{{.window}}]))
+          totalQuery: >-
+            sum(rate(envoy_cluster_upstream_rq_total{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[{{.window}}]))
+      alerting:
+        name: GatewayAvailabilityBudgetBurn
+        labels:
+          category: availability
+        annotations:
+          summary: The gateway is burning its availability error budget too fast
+          runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/gateway-5xx.md
+        pageAlert:
+          labels:
+            severity: critical
+        ticketAlert:
+          labels:
+            severity: warning
+    - name: latency
+      objective: 95
+      description: >-
+        Requests answered in under 30 s, from the request to the last byte of the answer. Envoy does not see the first
+        token: the time to first token comes with vLLM's metrics (milestone 3). 30 s fits models on CPU.
+        Envoy's buckets are in milliseconds and its le label is written as a float: le="30000.0", not "30000".
+      sli:
+        events:
+          errorQuery: >-
+            sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[{{.window}}]))
+            -
+            sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0",
+            le="30000.0"}[{{.window}}]))
+          totalQuery: >-
+            sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[{{.window}}]))
+      alerting:
+        name: GatewayLatencyBudgetBurn
+        labels:
+          category: latency
+        annotations:
+          summary: The gateway is burning its latency error budget too fast
+          runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/gateway-latency.md
+        pageAlert:
+          labels:
+            severity: critical
+        ticketAlert:
+          labels:
+            severity: warning

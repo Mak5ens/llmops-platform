@@ -10,6 +10,10 @@ hooks:
 lint:
     pre-commit run --all-files
 
+# Generate the Prometheus rules of the SLOs in slo/ with Sloth (needs Docker)
+slo:
+    scripts/slo-generate.sh
+
 # Kube context of the local k3d cluster
 context := "k3d-llmops"
 
@@ -70,3 +74,4 @@ test: cluster-check
     scripts/postgres-check.sh {{context}}
     scripts/restore-check.sh {{context}}
     scripts/observability-check.sh {{context}}
+    scripts/slo-check.sh {{context}}

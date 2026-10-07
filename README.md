@@ -63,7 +63,7 @@ The empty cluster takes about 1 GB of RAM, the platform as it stands about 13 to
 
 ```bash
 just up               # k3d cluster, then ArgoCD deploys every component from Git
-just test             # cluster, Applications, self-heal, HTTPS, PostgreSQL failover and restore, latency → trace → logs
+just test             # cluster, Applications, self-heal, HTTPS, PostgreSQL failover and restore, latency → trace → logs, SLO alert
 just ca-cert          # exports the local CA to local/ca.pem
 just test-gateway     # the integration tests of block 1 against the cluster (needs ../llmops-gateway)
 just argocd-password  # ArgoCD admin password; the UI is on https://argocd.localtest.me
@@ -144,6 +144,20 @@ Metrics, logs and traces lead to one another ([ADR-020](docs/adr/020-observabili
 On the `Gateway` dashboard, a dot on the latency graph is an exemplar: a click opens the request's trace in Tempo, and *Logs for this span* opens its access log in Loki. `scripts/observability-check.sh` follows these two clicks through the APIs on every run of `just test`.
 The control plane is not scraped: it is embedded in k3s and managed on Kapsule. The rules that would fire for its missing targets are off.
 
+### SLOs and runbooks
+
+The gateway has two SLOs, measured by Envoy on the route to LiteLLM ([ADR-021](docs/adr/021-gateway-slos.md), [`slo/gateway.yaml`](slo/gateway.yaml)):
+
+| SLO | Objective, 30 days | Alert |
+| -- | -- | -- |
+| Availability | 99.5 % of requests without a 5xx (4xx are the gateway doing its job) | `GatewayAvailabilityBudgetBurn` → [runbook](docs/runbooks/gateway-5xx.md) |
+| Latency | 95 % of requests answered in under 30 s (total duration; time to first token with vLLM, milestone 3) | `GatewayLatencyBudgetBurn` → [runbook](docs/runbooks/gateway-latency.md) |
+
+Sloth's CLI generates the recording rules and the multi-window burn rate alerts: `just slo` after a change to `slo/`, checked by a pre-commit hook. A page fires when the budget burns 14.4 times too fast over 5 minutes and 1 hour. `scripts/slo-check.sh` stops the server of `chat-small` and checks that it fires, with its runbook: 169 s locally.
+A model server that restarts in a loop has its own alert, `ModelServerCrashLooping` → [runbook](docs/runbooks/model-server-crashloop.md).
+
+Grafana holds the error budget (*SLO / Detail*, *High level Sloth SLOs*) next to the `Gateway` dashboard, and the community dashboards of CloudNativePG and Envoy Gateway at a pinned revision (`scripts/fetch-dashboards.py`).
+
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
@@ -189,7 +203,7 @@ GPUs are rented on Scaleway for a few hours for the final measurements, then `te
 
 ## Architecture decisions
 
-This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse, the multi-repo layout, k3d for the local cluster, CloudNativePG, External Secrets and the observability stack. Repo-specific ADRs stay in their own repo.
+This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/`](docs/adr/): GitHub Actions, Scaleway, Terraform, RabbitMQ, Envoy Gateway, self-hosted Langfuse, the multi-repo layout, k3d for the local cluster, CloudNativePG, External Secrets, the observability stack and the gateway's SLOs. Repo-specific ADRs stay in their own repo.
 
 ## Part of an internal AI platform
 

@@ -15,6 +15,7 @@ resources:
   - litellm
 components:
   - ../../shared/postgres-backups
+  - ../../shared/postgres-monitoring
 configMapGenerator:
   # Copies of config/litellm.yaml and config/tenants.yaml of llmops-gateway. The service names are the same as in
   # its compose stack (ollama, ollama-large, presidio-analyzer...), so the files are identical.

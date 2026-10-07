@@ -1,4 +1,5 @@
 # Dashboards as code: each JSON file becomes a ConfigMap labelled grafana_dashboard=1, which Grafana's sidecar loads.
+# gateway.json is ours; the others are community dashboards at a pinned revision (scripts/fetch-dashboards.py).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 generatorOptions:
@@ -9,3 +10,18 @@ configMapGenerator:
   - name: dashboard-gateway
     files:
       - gateway.json
+  - name: dashboard-slo-detail
+    files:
+      - slo-detail.json
+  - name: dashboard-slo-overview
+    files:
+      - slo-overview.json
+  - name: dashboard-cloudnative-pg
+    files:
+      - cloudnative-pg.json
+  - name: dashboard-envoy-proxy-global
+    files:
+      - envoy-proxy-global.json
+  - name: dashboard-envoy-clusters
+    files:
+      - envoy-clusters.json
