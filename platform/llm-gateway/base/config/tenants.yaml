@@ -2,6 +2,7 @@
 # applies it after every sync, and secrets come from the gateway-env Secret instead of .env.
 #
 # Client teams of the gateway: what each one may call, how much it may spend, and how fast.
+# Client teams of the gateway: what each one may call, how much it may spend, and how fast.
 # Applied by scripts/bootstrap_tenants.py on every `just gateway-up` (the `tenants-bootstrap` service).
 # Re-running is safe: missing teams and keys are created, existing ones are updated to match this file.
 # Removing a team from this file does not delete it from the gateway.
