@@ -86,6 +86,12 @@ jobs:
         working-directory: llmops-gateway
         env:
           GATEWAY_STACK: kubernetes
+      # The whole platform has to fit on the runner (16 GB): print what the cluster takes, success or failure.
+      - name: Memory
+        if: always()
+        run: |
+          free -m
+          docker stats --no-stream --format '{{.Name}} {{.MemUsage}}'
       - name: Cluster state on failure
         if: failure()
         run: |
