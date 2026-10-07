@@ -2,7 +2,6 @@
 # litellm-config ConfigMap, and the services it names (ollama, presidio-analyzer...) have the same names as in compose.
 #
 # LiteLLM Proxy configuration. Values written `os.environ/NAME` are read from the container environment.
-# LiteLLM Proxy configuration. Values written `os.environ/NAME` are read from the container environment.
 # Reference: https://docs.litellm.ai/docs/proxy/configs
 #
 # Callers only know usage aliases (chat-small, chat-large, embed). Which model serves an alias is decided here,
@@ -65,9 +64,7 @@ guardrails:
   - guardrail_name: pii-fr
     litellm_params: &pii-fr
       guardrail: presidio_markers.PresidioStableMarkers
-      # pre_call masks the prompt; post_call puts the real values back into the answer. Since LiteLLM 1.84, a streamed
-      # answer only goes through a guardrail that runs at post_call: with pre_call alone, it came back with markers.
-      mode: [pre_call, post_call]
+      mode: pre_call
       default_on: true
       output_parse_pii: true
       presidio_analyzer_api_base: http://presidio-analyzer:3000
@@ -101,34 +98,9 @@ general_settings:
 
 litellm_settings:
   # Every call, success or failure, is traced to Langfuse over OTLP (Langfuse v4 takes nothing else). The keys in the
-  # environment point to the Gateway project; default_team_settings below points a team's calls to the team's own
-  # project. Langfuse prices the tokens with the internal prices above.
+  # environment point to the Gateway project; a team's metadata points its calls to the team's own project
+  # (scripts/bootstrap_tenants.py). Langfuse prices the tokens with the internal prices above.
   callbacks: ["langfuse_otel"]
-  # The Langfuse project of each client team of config/tenants.yaml, where LiteLLM sends the team's traces (ADR-016).
-  # Here rather than in the team's metadata: since LiteLLM 1.84, an os.environ/ reference in metadata is no longer
-  # resolved, and the secret key would have to be stored in LiteLLM's database. scripts/bootstrap_tenants.py checks
-  # that these entries match tenants.yaml.
-  default_team_settings:
-    - team_id: f1
-      success_callback: ["langfuse_otel"]
-      failure_callback: ["langfuse_otel"]
-      langfuse_public_key: pk-lf-f1
-      langfuse_secret_key: os.environ/LANGFUSE_SECRET_KEY_F1
-    - team_id: mj
-      success_callback: ["langfuse_otel"]
-      failure_callback: ["langfuse_otel"]
-      langfuse_public_key: pk-lf-mj
-      langfuse_secret_key: os.environ/LANGFUSE_SECRET_KEY_MJ
-    - team_id: baux
-      success_callback: ["langfuse_otel"]
-      failure_callback: ["langfuse_otel"]
-      langfuse_public_key: pk-lf-baux
-      langfuse_secret_key: os.environ/LANGFUSE_SECRET_KEY_BAUX
-    - team_id: support
-      success_callback: ["langfuse_otel"]
-      failure_callback: ["langfuse_otel"]
-      langfuse_public_key: pk-lf-support
-      langfuse_secret_key: os.environ/LANGFUSE_SECRET_KEY_SUPPORT
   # Traces keep the team, key, alias, tokens, cost and latency, never the messages: the pii-fr guardrail puts the real
   # values back into the answer before LiteLLM logs it, and an opted-out team can still send personal data.
   # LiteLLM's per-team or per-request switch is ignored by langfuse_otel in 1.83.14, so this one applies to all.

@@ -1,4 +1,4 @@
-# Values of the official LiteLLM chart, at the version of the compose stack of llmops-gateway (1.104.1).
+# Values of the official LiteLLM chart, at the version of the compose stack of llmops-gateway.
 fullnameOverride: litellm
 image:
   # The official litellm-database image, plus the pii-fr guardrail class next to the config file and the tenant
