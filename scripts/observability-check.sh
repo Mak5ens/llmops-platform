@@ -16,7 +16,7 @@ get() {
   local target=$1 path=$2
   shift 2
   local query
-  query=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.urlencode([a.split("=", 1) for a in sys.argv[1:]]))' "$@")
+  query=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.urlencode([tuple(a.split("=", 1)) for a in sys.argv[1:]]))' "$@")
   "${kc[@]}" get --raw "/api/v1/namespaces/monitoring/services/$target/proxy$path?$query" 2>/dev/null
 }
 
@@ -43,10 +43,10 @@ echo "== Click 0: an exemplar on the latency graph"
 exemplar() {
   local end
   end=$(date +%s)
-  get kps-prometheus:9090 /api/v1/query_exemplars 'query=traces_spanmetrics_latency_bucket{service="platform.gateway"}' \
+  get kps-prometheus:9090 /api/v1/query_exemplars 'query=traces_spanmetrics_latency_bucket{service="platform.gateway", span_kind="SPAN_KIND_SERVER"}' \
     "start=$((end - 600))" "end=$end" \
     | python3 -c 'import json, sys
-found = [e["labels"]["trace_id"] for s in json.load(sys.stdin)["data"] for e in s["exemplars"] if "trace_id" in e["labels"]]
+found = [e["labels"]["traceID"] for s in json.load(sys.stdin)["data"] for e in s["exemplars"] if "traceID" in e["labels"]]
 print(found[-1] if found else "")'
 }
 trace_id=$(until_found 180 exemplar) || { echo "No exemplar on the gateway's latency after 180 s" >&2; exit 1; }
@@ -66,7 +66,7 @@ logs() {
     "start=$((end - 900))000000000" "end=${end}000000000" \
     | python3 -c 'import json, sys
 lines = [v[1] for r in json.load(sys.stdin)["data"]["result"] for v in r["values"]]
-print(f"{len(lines)} line(s): {lines[0][:160]}" if lines else "")'
+print(f"{len(lines)} line(s): {lines[0][:160]}" if lines and lines[0].strip() else "")'
 }
 until_found 60 logs || { echo "No log line with trace ID $trace_id in Loki" >&2; exit 1; }
 echo "From the latency graph to the request's trace and logs: OK"
