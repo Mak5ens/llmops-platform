@@ -46,8 +46,9 @@ exemplar() {
   get kps-prometheus:9090 /api/v1/query_exemplars 'query=traces_spanmetrics_latency_bucket{service="platform.gateway", span_kind="SPAN_KIND_SERVER"}' \
     "start=$((end - 600))" "end=$end" \
     | python3 -c 'import json, sys
-found = [e["labels"]["traceID"] for s in json.load(sys.stdin)["data"] for e in s["exemplars"] if "traceID" in e["labels"]]
-print(found[-1] if found else "")'
+found = [(e["timestamp"], e["labels"]["traceID"]) for s in json.load(sys.stdin)["data"] for e in s["exemplars"]
+         if "traceID" in e["labels"]]
+print(max(found)[1] if found else "")'
 }
 trace_id=$(until_found 180 exemplar) || { echo "No exemplar on the gateway's latency after 180 s" >&2; exit 1; }
 echo "Exemplar with trace ID $trace_id"

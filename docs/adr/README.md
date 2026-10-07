@@ -16,6 +16,7 @@ This repo holds the **cross-cutting ADRs** of the whole platform. ADRs that only
 | [ADR-017](017-local-cluster-k3d.md) | k3d for the local cluster and the CI, with scripts that run on any cluster | Accepted |
 | [ADR-018](018-postgresql-cloudnativepg.md) | PostgreSQL with CloudNativePG, backups to S3, SeaweedFS as the local S3 | Accepted |
 | [ADR-019](019-external-secrets.md) | External Secrets Operator, with a local backend that never touches Git | Accepted |
+| [ADR-020](020-observability-stack.md) | Prometheus, Loki and Tempo in their smallest form, fed by one OpenTelemetry Collector, Envoy as the gateway's telemetry | Accepted |
 
 ADR numbers are global to the portfolio: a number used in one repo is never reused in another.
 Repo-specific ADRs so far, all in `llmops-gateway`:

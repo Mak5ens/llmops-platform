@@ -43,6 +43,10 @@ gateway-secrets ctx=context:
       [print(f"{k}={base64.b64decode(v).decode()}") for k, v in sorted(json.load(sys.stdin)["data"].items()) \
        if re.search("MASTER_KEY|TEAM_KEY|ADMIN|VIEWER", k)]'
 
+# Print Grafana's admin password; Grafana is on https://grafana.localtest.me (user admin)
+grafana-password ctx=context:
+    @kubectl --context {{ctx}} -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d; echo " (user admin)"
+
 # Export the local CA to local/ca.pem, to trust *.localtest.me in curl (--cacert) or a browser
 ca-cert ctx=context:
     kubectl --context {{ctx}} -n cert-manager get secret local-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > local/ca.pem
