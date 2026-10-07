@@ -1,0 +1,51 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Version updates of the platform (ADR-022): GitHub Actions (pinned to commit SHAs), Helm charts and images of the kustomizations, manifests installed from a release URL, pre-commit hooks. The images published by llmops-gateway (tag sha-<commit>) are LAB-141.",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", ":semanticCommits"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "dependencyDashboard": true,
+  "pre-commit": {
+    "enabled": true
+  },
+  "kubernetes": {
+    "managerFilePatterns": ["/^platform/.+\\.ya?ml$/"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Manifests installed from a release URL, with the version in the path only",
+      "managerFilePatterns": ["/^platform/.+/kustomization\\.yaml$/"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[0-9][^/]*)/(?:install|manifest|cert-manager)\\.yaml",
+        "https://raw\\.githubusercontent\\.com/(?<depName>[^/]+/[^/]+)/(?<currentValue>v[0-9][^/]*)/manifests/install\\.yaml"
+      ],
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "CloudNativePG's manifest has its version in the file name too",
+      "managerFilePatterns": ["/^platform/cloudnative-pg/base/kustomization\\.yaml$/"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>cloudnative-pg/cloudnative-pg)/releases/download/v(?<currentValue>[0-9.]+)/cnpg-[0-9.]+\\.yaml"
+      ],
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "autoReplaceStringTemplate": "https://github.com/{{{depName}}}/releases/download/v{{{newValue}}}/cnpg-{{{newValue}}}.yaml"
+    },
+    {
+      "customType": "regex",
+      "description": "Sloth's image in the script that generates the SLO rules",
+      "managerFilePatterns": ["/^scripts/slo-generate\\.sh$/"],
+      "matchStrings": ["image=(?<depName>ghcr\\.io/slok/sloth):(?<currentValue>v[0-9.]+)"],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Major versions of the platform's operators and charts need a reading of their upgrade notes",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}
