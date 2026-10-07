@@ -74,3 +74,4 @@ test: cluster-check
     scripts/postgres-check.sh {{context}}
     scripts/restore-check.sh {{context}}
     scripts/observability-check.sh {{context}}
+    scripts/slo-check.sh {{context}}
