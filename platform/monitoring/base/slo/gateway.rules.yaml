@@ -214,7 +214,7 @@ spec:
   - name: sloth-slo-sli-recordings-llm-gateway-latency
     rules:
     - expr: |
-        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[5m])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000"}[5m])))
+        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[5m])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000.0"}[5m])))
         /
         (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[5m])))
       labels:
@@ -225,7 +225,7 @@ spec:
         sloth_window: 5m
       record: slo:sli_error:ratio_rate5m
     - expr: |
-        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[30m])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000"}[30m])))
+        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[30m])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000.0"}[30m])))
         /
         (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[30m])))
       labels:
@@ -236,7 +236,7 @@ spec:
         sloth_window: 30m
       record: slo:sli_error:ratio_rate30m
     - expr: |
-        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[1h])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000"}[1h])))
+        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[1h])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000.0"}[1h])))
         /
         (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[1h])))
       labels:
@@ -247,7 +247,7 @@ spec:
         sloth_window: 1h
       record: slo:sli_error:ratio_rate1h
     - expr: |
-        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[2h])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000"}[2h])))
+        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[2h])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000.0"}[2h])))
         /
         (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[2h])))
       labels:
@@ -258,7 +258,7 @@ spec:
         sloth_window: 2h
       record: slo:sli_error:ratio_rate2h
     - expr: |
-        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[6h])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000"}[6h])))
+        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[6h])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000.0"}[6h])))
         /
         (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[6h])))
       labels:
@@ -269,7 +269,7 @@ spec:
         sloth_window: 6h
       record: slo:sli_error:ratio_rate6h
     - expr: |
-        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[1d])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000"}[1d])))
+        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[1d])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000.0"}[1d])))
         /
         (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[1d])))
       labels:
@@ -280,7 +280,7 @@ spec:
         sloth_window: 1d
       record: slo:sli_error:ratio_rate1d
     - expr: |
-        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[3d])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000"}[3d])))
+        (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[3d])) - sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0", le="30000.0"}[3d])))
         /
         (sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[3d])))
       labels:

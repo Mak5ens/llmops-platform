@@ -43,13 +43,14 @@ spec:
       description: >-
         Requests answered in under 30 s, from the request to the last byte of the answer. Envoy does not see the first
         token: the time to first token comes with vLLM's metrics (milestone 3). 30 s fits models on CPU.
+        Envoy's buckets are in milliseconds and its le label is written as a float: le="30000.0", not "30000".
       sli:
         events:
           errorQuery: >-
             sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[{{.window}}]))
             -
             sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0",
-            le="30000"}[{{.window}}]))
+            le="30000.0"}[{{.window}}]))
           totalQuery: >-
             sum(rate(envoy_cluster_upstream_rq_time_count{envoy_cluster_name="httproute/llm-gateway/litellm/rule/0"}[{{.window}}]))
       alerting:
