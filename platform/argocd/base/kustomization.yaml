@@ -5,7 +5,7 @@ namespace: argocd
 resources:
   - namespace.yaml
   # Upstream manifests of the pinned version; Renovate will propose upgrades.
-  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.3/manifests/install.yaml
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.4/manifests/install.yaml
 patches:
   - path: argocd-cm.yaml
   - path: argocd-cmd-params-cm.yaml
