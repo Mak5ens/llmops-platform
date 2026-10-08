@@ -48,7 +48,8 @@ exemplar() {
     | python3 -c 'import json, sys
 found = [(e["timestamp"], e["labels"]["traceID"]) for s in json.load(sys.stdin)["data"] for e in s["exemplars"]
          if "traceID" in e["labels"]]
-print(max(found)[1] if found else "")'
+# Tempo drops the leading zeros of the trace ID in exemplars; Loki has all 32 hex digits.
+print(max(found)[1].zfill(32) if found else "")'
 }
 trace_id=$(until_found 180 exemplar) || { echo "No exemplar on the gateway's latency after 180 s" >&2; exit 1; }
 echo "Exemplar with trace ID $trace_id"
