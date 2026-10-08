@@ -40,6 +40,10 @@ options:
       # Exposure goes through Envoy Gateway (ADR-005), not the Traefik bundled with k3s.
       - arg: --disable=traefik
         nodeFilters: [server:*]
+      # The kubelet rotates a container's log at 10 Mi by default, and `kubectl logs` reads the current file only.
+      # LiteLLM at DEBUG (test_no_leak.py of llmops-gateway) writes more than that for its 100 calls.
+      - arg: --kubelet-arg=container-log-max-size=100Mi
+        nodeFilters: [server:*, agent:*]
   kubeconfig:
     # Adds the k3d-llmops context without making it current: scripts always pass their context explicitly.
     updateDefaultKubeconfig: true
