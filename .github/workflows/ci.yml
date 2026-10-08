@@ -49,6 +49,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  supply-chain-gate:
+    # Self-test of the reusable build workflow (ADR-022): an image with known critical CVEs must be blocked.
+    uses: ./.github/workflows/build-image.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    with:
+      image: ghcr.io/mak5ens/llmops-platform/vulnerable-fixture
+      context: .github/fixtures/vulnerable-image
+      expect-vulnerable: true
+
   cluster:
     # Creates the local k3d cluster on the runner, bootstraps ArgoCD from the branch under test,
     # then runs the tests, as `just up` and `just test` do on a laptop (ADR-017).
