@@ -59,5 +59,6 @@ Every action in it is pinned to a commit SHA, and Trivy is installed from its re
 - The gate tests itself: the CI of this repo builds an image with known critical CVEs (`.github/fixtures/vulnerable-image`) and fails if the scan lets it through.
 - To pass the gate, the gateway moved from LiteLLM 1.83.14 to 1.104.1, which closes CVE-2026-49468. The Presidio Analyzer image gets its Debian packages and anyio upgraded on top of Microsoft's last image (2.2.362).
 - The Presidio Anonymizer runs Microsoft's image unchanged: the gate covers the images we build, not third-party ones. Scanning what runs in the cluster (Trivy Operator) is a next step.
+- Callers pin the workflow to a commit of `main` (`uses: Mak5ens/llmops-platform/.github/workflows/build-image.yml@<sha>`). A commit of a PR branch stops working once the branch is deleted: GitHub answers `workflow was not found`, even though the commit is still readable. The gateway's first publication failed that way.
 - Renovate updates the pinned SHAs and versions, so pinning does not mean freezing.
 - We revisit if Sigstore's public services become a constraint (outages, regulation): cosign with a key held in a KMS.
