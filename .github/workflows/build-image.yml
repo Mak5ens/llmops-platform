@@ -25,6 +25,11 @@ on:
         required: false
         type: string
         default: ""
+      version:
+        description: Release version, e.g. 1.2.0 (tag v1.2.0). The image gets the tag 1.2.0 next to sha-<commit>
+        required: false
+        type: string
+        default: ""
       push:
         description: Publish, sign and attach the SBOM (false on pull requests)
         required: false
@@ -68,7 +73,10 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ inputs.image }}
-          tags: type=sha,prefix=sha-
+          # sha-<commit> for every build of main; X.Y.Z for a release, the tag Renovate follows (ADR-023).
+          tags: |
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}},value=${{ inputs.version }},enable=${{ inputs.version != '' }}
 
       - name: Build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
