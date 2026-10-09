@@ -15,7 +15,7 @@ components:
 helmCharts:
   - name: langfuse
     repo: https://langfuse.github.io/langfuse-k8s
-    version: 2.1.3
+    version: 2.1.4
     releaseName: langfuse
     namespace: langfuse
     valuesFile: values.yaml
