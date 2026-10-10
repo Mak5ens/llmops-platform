@@ -122,7 +122,7 @@ The gateway of [`llmops-gateway`](https://github.com/Mak5ens/llmops-gateway) run
 
 - [`platform/llm-gateway/`](platform/llm-gateway/): LiteLLM from its official Helm chart, on `https://llm.localtest.me`; Presidio Analyzer and Anonymizer; two Ollama servers until vLLM (milestone 3); and the `tenants-bootstrap` Job, which ArgoCD runs after every sync to create the client teams, their keys and their Langfuse projects;
 - [`platform/langfuse/`](platform/langfuse/): Langfuse from its official chart, on `https://langfuse.localtest.me`, with its database on CloudNativePG, its events and media on SeaweedFS, and a single-node ClickHouse (the chart's needs the ClickHouse operator);
-- the images of our own come from llmops-gateway on GHCR: the French Presidio Analyzer, and LiteLLM with the guardrail class and the bootstrap scripts. `config/litellm.yaml` and `config/tenants.yaml` are copies of llmops-gateway's: the services have the same names as in Compose, so the files are identical;
+- the images of our own come from llmops-gateway on GHCR: the French Presidio Analyzer, and LiteLLM with the guardrail class and the bootstrap scripts. `config/litellm.yaml` and `config/tenants.yaml` are copies of llmops-gateway's: the services have the same names as in Compose, so the files are identical. A release of the gateway reaches the cluster through a Renovate PR (see below);
 - every secret (master key, team keys, Langfuse keys and accounts) is written once to `local-secrets` by `just bootstrap`; `just gateway-secrets` prints the ones you need to call the gateway or sign in to Langfuse.
 
 The integration tests of block 1 run unchanged against the cluster, in the CI after `just test` and locally with `just test-gateway`: 46 tests, about 10 minutes, most of it waiting for ArgoCD to put things back after the fallback and leak tests.
@@ -131,6 +131,27 @@ Two things the move taught:
 
 - Envoy cuts a request after 15 s by default. A `chat-large` call that falls back to `chat-small` takes up to 20 s, so the route to LiteLLM has a 90 s timeout.
 - Kustomize's namespace transformer leaves the resources rendered from a Helm chart alone. Without a namespace, the LiteLLM Deployment kept the name of its ConfigMap without the content hash, and would not restart on a configuration change. A patch sets the namespace.
+
+### From a commit of the gateway to the cluster
+
+A new version of the gateway reaches the cluster through a PR, without copying a tag by hand ([ADR-023](docs/adr/023-image-propagation.md)):
+
+```mermaid
+flowchart LR
+    fix["fix: merged in<br/>llmops-gateway"] --> rp["release PR<br/>(release-please)"]
+    rp -->|merge| tag["tag vX.Y.Z<br/>images X.Y.Z, signed, SBOM"]
+    tag --> renovate["Renovate PR<br/>on llmops-platform"]
+    renovate --> ci["CI: signature, configuration,<br/>cluster and the release's tests"]
+    ci -->|"patch: Renovate merges<br/>minor, major: by hand"| argocd["ArgoCD deploys"]
+```
+
+1. release-please keeps a release PR open in llmops-gateway, with the next version and the changelog, from the merged Conventional Commits.
+2. Merging it tags `vX.Y.Z` and publishes both images as `X.Y.Z`, signed by `build-image.yml` with their SBOM (ADR-022).
+3. At its next run, within the hour, Renovate opens one PR here for both images.
+4. The `gateway-release` job checks the images' signatures and SBOMs (`just verify-images`) and that `platform/llm-gateway/base/config/` matches the release. When a release changes `config/litellm.yaml` or `config/tenants.yaml`, the job fails with the diff: `just gateway-config` on the PR's branch copies the release's files, in one commit.
+5. The `cluster` job deploys the PR's branch and runs the gateway's integration tests from the release's tag.
+6. Renovate merges a patch once every check has passed. A minor is merged by hand, and a major also waits for an approval on the dependency dashboard.
+7. ArgoCD deploys `main`: the *llm-gateway* Application shows the new image tag.
 
 ### Observability
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Version updates of the platform (ADR-022): GitHub Actions (pinned to commit SHAs), Helm charts and images of the kustomizations, manifests installed from a release URL, pre-commit hooks. The images published by llmops-gateway (tag sha-<commit>) are LAB-141.",
+  "description": "Version updates of the platform (ADR-022): GitHub Actions (pinned to commit SHAs), Helm charts and images of the kustomizations, manifests installed from a release URL, pre-commit hooks. The releases of llmops-gateway arrive the same way, through their X.Y.Z image tags (ADR-023).",
   "extends": ["config:recommended", "helpers:pinGitHubActionDigests", ":semanticCommits"],
   "labels": ["dependencies"],
   "prConcurrentLimit": 5,
@@ -46,6 +46,22 @@
       "description": "Major versions of the platform's operators and charts need a reading of their upgrade notes",
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Releases of llmops-gateway (ADR-023): one PR for both images, before the other updates",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/mak5ens/llmops-gateway/**"],
+      "groupName": "llmops-gateway",
+      "prPriority": 10
+    },
+    {
+      "description": "A patch release of llmops-gateway is merged by Renovate once every check has passed, the gateway-release job included. No branch protection on the repo, so Renovate merges itself rather than through GitHub's auto-merge",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/mak5ens/llmops-gateway/**"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
     }
   ]
 }

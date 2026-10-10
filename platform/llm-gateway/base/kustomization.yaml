@@ -25,9 +25,10 @@ configMapGenerator:
   - name: tenants-config
     files:
       - tenants.yaml=config/tenants.yaml
-# Images published by llmops-gateway, both built from the same commit.
+# Images of an llmops-gateway release, both built from its tag (ADR-023). Renovate updates them in one PR, and
+# scripts/gateway-release.sh checks that config/ matches the release.
 images:
   - name: ghcr.io/mak5ens/llmops-gateway/litellm
-    newTag: sha-f29635d
+    newTag: 0.2.0
   - name: ghcr.io/mak5ens/llmops-gateway/presidio-analyzer
-    newTag: sha-f29635d
+    newTag: 0.2.0

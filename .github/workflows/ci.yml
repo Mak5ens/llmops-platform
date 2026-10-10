@@ -61,6 +61,21 @@ jobs:
       context: .github/fixtures/vulnerable-image
       expect-vulnerable: true
 
+  gateway-release:
+    # The llmops-gateway release this branch deploys (ADR-023): its images are signed by build-image.yml with an SBOM
+    # attached, and the platform's copy of its configuration matches the release. A Renovate PR is merged only if
+    # this job passes.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
+      - run: scripts/verify-images.sh
+      - run: scripts/gateway-release.sh check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   cluster:
     # Creates the local k3d cluster on the runner, bootstraps ArgoCD from the branch under test,
     # then runs the tests, as `just up` and `just test` do on a laptop (ADR-017).
@@ -90,10 +105,16 @@ jobs:
           REVISION: ${{ github.head_ref || github.ref_name }}
       - run: just test
       # The integration tests of block 1, unchanged, against the gateway deployed on the cluster: every alias, the
-      # teams' limits and budgets, the fallback, Presidio, the PII guardrail, Langfuse and the leak test.
+      # teams' limits and budgets, the fallback, Presidio, the PII guardrail, Langfuse and the leak test. They are
+      # taken from the release the platform deploys, so a new release is tested with its own tests.
+      - id: gateway
+        run: echo "ref=$(scripts/gateway-release.sh ref)" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v7
         with:
           repository: Mak5ens/llmops-gateway
+          ref: ${{ steps.gateway.outputs.ref }}
           path: llmops-gateway
       - uses: astral-sh/setup-uv@v10.2.0
       - run: uv run pytest tests/integration

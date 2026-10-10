@@ -14,6 +14,14 @@ lint:
 slo:
     scripts/slo-generate.sh
 
+# Copy config/litellm.yaml and config/tenants.yaml of the llmops-gateway release the platform deploys
+gateway-config:
+    scripts/gateway-release.sh sync
+
+# Check the signature and the SBOM of every image of our own the platform deploys (needs cosign)
+verify-images:
+    scripts/verify-images.sh
+
 # Kube context of the local k3d cluster
 context := "k3d-llmops"
 

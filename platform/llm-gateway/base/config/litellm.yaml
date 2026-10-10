@@ -2,7 +2,6 @@
 # litellm-config ConfigMap, and the services it names (ollama, presidio-analyzer...) have the same names as in compose.
 #
 # LiteLLM Proxy configuration. Values written `os.environ/NAME` are read from the container environment.
-# LiteLLM Proxy configuration. Values written `os.environ/NAME` are read from the container environment.
 # Reference: https://docs.litellm.ai/docs/proxy/configs
 #
 # Callers only know usage aliases (chat-small, chat-large, embed). Which model serves an alias is decided here,
