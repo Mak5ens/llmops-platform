@@ -48,11 +48,13 @@
       "dependencyDashboardApproval": true
     },
     {
-      "description": "Releases of llmops-gateway (ADR-023): one PR for both images, before the other updates",
+      "description": "Releases of llmops-gateway (ADR-023): one PR for both images, created first and outside the PR limits, so a release never waits behind third-party updates",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/mak5ens/llmops-gateway/**"],
       "groupName": "llmops-gateway",
-      "prPriority": 10
+      "prPriority": 10,
+      "prConcurrentLimit": 0,
+      "prHourlyLimit": 0
     },
     {
       "description": "A patch release of llmops-gateway is merged by Renovate once every check has passed, the gateway-release job included. No branch protection on the repo, so Renovate merges itself rather than through GitHub's auto-merge",
