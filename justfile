@@ -81,6 +81,7 @@ test: cluster-check
     scripts/gateway-check.sh {{context}}
     scripts/postgres-check.sh {{context}}
     scripts/queue-check.sh {{context}}
+    scripts/autoscaling-check.sh {{context}}
     scripts/restore-check.sh {{context}}
     scripts/observability-check.sh {{context}}
     scripts/slo-check.sh {{context}}

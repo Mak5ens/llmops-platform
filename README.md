@@ -192,6 +192,24 @@ Long jobs (analysing a Formula 1 season, checking a batch of documents) go throu
 
 `scripts/queue-check.sh`, run by `just test`, fails a job three times as a worker would: the retries come 5 s, then 10 s after the failures, and the job ends in the dead letter queue, where Prometheus sees it.
 
+### Workers scaled from zero
+
+The workers come from llmops-gateway ([`worker/`](https://github.com/Mak5ens/llmops-gateway/tree/main/worker)): they run each job through the gateway with the key of the job's team, reply to its `reply_to`, and give failed jobs back to RabbitMQ. On SIGTERM, a worker finishes the jobs it holds before it exits.
+
+- [`platform/keda/`](platform/keda/) installs KEDA;
+- [`platform/job-worker/`](platform/job-worker/) deploys the worker, with the teams' keys from the store `platform`, and its `ScaledObject`, which KEDA turns into replicas.
+
+| Setting | Value | Why |
+| -- | -- | -- |
+| Metric | jobs in `jobs.inference`, waiting or held by a worker | through the management API: counting only the waiting jobs (AMQP) would scale workers down while they still work |
+| Jobs per worker | 4 | each worker runs 2 jobs at a time (`WORKER_CONCURRENCY`) |
+| Workers | 0 to 6 | zero while the queue is empty; 6 fit in the CI runner's 16 GB with the rest of the platform |
+| Polling | every 5 s | a job waits at most 5 s before its first worker is asked for |
+| Back to zero | 60 s after the queue empties | |
+| Grace period | 150 s | longer than a call to the gateway (120 s), so a scale-down never cuts a job |
+
+`scripts/autoscaling-check.sh`, run by `just test`, publishes 500 simulated jobs of 2 s and deletes a worker halfway. Locally, the first worker is ready 13 s after the first job, 6 workers answer the 500 jobs in 112 s, each exactly once and none dead-lettered, and the workers are back to zero 65 s later.
+
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
