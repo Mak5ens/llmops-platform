@@ -11,7 +11,7 @@ spec:
     namespace: gateway
 ---
 # How Envoy Gateway deploys the proxies. The Service type is the one setting that depends on the
-# cluster (ADR-017): LoadBalancer works on k3d, k3s, Kapsule, and on minikube with `minikube tunnel`.
+# cluster (ADR-017): LoadBalancer works on k3d, k3s, managed clusters, and on minikube with `minikube tunnel`.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -27,7 +27,7 @@ spec:
   # Collector (ADR-020): from a point of the gateway's latency graph, its trace, then its logs.
   telemetry:
     tracing:
-      # Every request locally; to lower on Kapsule once traffic is real.
+      # Every request locally; to lower once traffic is real.
       samplingRate: 100
       provider:
         type: OpenTelemetry

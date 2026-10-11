@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Local stand-in for the cloud secret manager: random values, written once into the local-secrets
+# Stand-in for a secret manager: random values, written once into the local-secrets
 # namespace, where the ClusterSecretStore "platform" reads them (ADR-019). Existing secrets are kept,
-# so a re-run does not break what already uses them. In the cloud, Terraform writes the same
-# secrets to Scaleway Secret Manager.
+# so a re-run does not break what already uses them. With a real secret manager, only the
+# ClusterSecretStore would change.
 # Usage: scripts/seed-local-secrets.sh <kube context>
 set -euo pipefail
 
