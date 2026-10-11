@@ -1,5 +1,6 @@
 # Dashboards as code: each JSON file becomes a ConfigMap labelled grafana_dashboard=1, which Grafana's sidecar loads.
-# gateway.json is ours; the others are community dashboards at a pinned revision (scripts/fetch-dashboards.py).
+# gateway.json and job-queues.json are ours; the others are community dashboards at a pinned revision
+# (scripts/fetch-dashboards.py).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 generatorOptions:
@@ -25,3 +26,9 @@ configMapGenerator:
   - name: dashboard-envoy-clusters
     files:
       - envoy-clusters.json
+  - name: dashboard-job-queues
+    files:
+      - job-queues.json
+  - name: dashboard-rabbitmq-overview
+    files:
+      - rabbitmq-overview.json

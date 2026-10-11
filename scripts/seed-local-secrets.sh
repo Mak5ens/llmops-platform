@@ -49,3 +49,5 @@ seed langfuse-db "username=langfuse" "password=$(hex 16)"
 seed langfuse-s3 "ACCESS_KEY_ID=$(hex 10)" "ACCESS_SECRET_KEY=$(hex 20)"
 # Grafana's admin account (LAB-128).
 seed grafana "admin-user=admin" "admin-password=$(hex 16)"
+# Default user of the job queue's RabbitMQ (LAB-134).
+seed rabbitmq "username=admin" "password=$(hex 16)"

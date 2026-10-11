@@ -1,0 +1,30 @@
+# One node: enough for the job rates of the platform (ADR-004). Quorum queues on one node keep their semantics
+# (delivery limit, dead lettering) without their replication.
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq
+spec:
+  replicas: 1
+  # 4.3 or later: delayed retry of quorum queues (topology.yaml).
+  image: rabbitmq:4.3.6-management
+  rabbitmq:
+    # Shovels move the jobs of a dead letter queue back to their queue (runbook jobs-dead-lettered).
+    additionalPlugins:
+      - rabbitmq_shovel
+      - rabbitmq_shovel_management
+  secretBackend:
+    externalSecret:
+      name: rabbitmq-default-user
+  # RabbitMQ sizes its memory alarm from the limit (40 % by default): above it, publishers are blocked.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  persistence:
+    storage: 2Gi
+  # The operator's default is 7 days, to let a node of a multi-node cluster hand over its queues. With one node there
+  # is nothing to hand over.
+  terminationGracePeriodSeconds: 60

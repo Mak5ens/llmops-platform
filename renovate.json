@@ -17,7 +17,7 @@
       "description": "Manifests installed from a release URL, with the version in the path only",
       "managerFilePatterns": ["/^platform/.+/kustomization\\.yaml$/"],
       "matchStrings": [
-        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[0-9][^/]*)/(?:install|manifest|cert-manager)\\.yaml",
+        "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[0-9][^/]*)/(?:install|manifest|cert-manager|cluster-operator|messaging-topology-operator-with-certmanager)\\.ya?ml",
         "https://raw\\.githubusercontent\\.com/(?<depName>[^/]+/[^/]+)/(?<currentValue>v[0-9][^/]*)/manifests/install\\.yaml"
       ],
       "datasourceTemplate": "github-releases"

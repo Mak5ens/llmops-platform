@@ -13,11 +13,12 @@ OUT = Path(__file__).resolve().parents[1] / "platform" / "monitoring" / "base" /
 GRAFANA_COM = "https://grafana.com/api/dashboards/{id}/revisions/{revision}/download"
 ENVOY_GATEWAY = "https://raw.githubusercontent.com/envoyproxy/gateway/{ref}/charts/gateway-addons-helm/dashboards/{name}"
 
-# file name -> source URL. Sloth's dashboards come from its author, CloudNativePG's and Envoy Gateway's from the projects.
+# file name -> source URL. Sloth's dashboards come from its author, the others from their projects.
 DASHBOARDS = {
     "slo-detail.json": GRAFANA_COM.format(id=14348, revision=5),
     "slo-overview.json": GRAFANA_COM.format(id=14643, revision=2),
     "cloudnative-pg.json": GRAFANA_COM.format(id=20417, revision=4),
+    "rabbitmq-overview.json": GRAFANA_COM.format(id=10991, revision=15),
     # Same version as the Envoy Gateway the platform runs (platform/envoy-gateway).
     "envoy-proxy-global.json": ENVOY_GATEWAY.format(ref="v1.9.2", name="envoy-proxy-global.json"),
     "envoy-clusters.json": ENVOY_GATEWAY.format(ref="v1.9.2", name="envoy-clusters.json"),

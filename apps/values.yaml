@@ -30,6 +30,9 @@ components:
   - name: secret-store
     namespace: external-secrets
     wave: -3
+  - name: rabbitmq-operator
+    namespace: rabbitmq-system
+    wave: -3
   # Metrics, alerts, Grafana and the monitoring CRDs (ServiceMonitor, PodMonitor, PrometheusRule) that the
   # components after it use.
   - name: monitoring
@@ -56,6 +59,9 @@ components:
     wave: 0
   - name: langfuse
     namespace: langfuse
+    wave: 0
+  - name: job-queue
+    namespace: jobs
     wave: 0
   # After Langfuse: its tenant bootstrap creates the teams' projects there.
   - name: llm-gateway

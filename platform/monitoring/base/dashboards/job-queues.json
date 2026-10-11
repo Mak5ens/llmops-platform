@@ -1,0 +1,188 @@
+{
+  "uid": "job-queues",
+  "title": "Job queues",
+  "tags": [
+    "llmops"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 41,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "description": "The job queues of RabbitMQ (namespace jobs): what waits, what runs, what was retried and what failed for good. RabbitMQ-Overview shows the node itself.",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Failed jobs set aside",
+      "description": "Jobs that failed three times, waiting in their dead letter queue to be inspected and replayed (runbook jobs-dead-lettered).",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages{namespace=\"jobs\", queue=~\".+\\\\.dead\"})",
+          "legendFormat": "{{queue}}"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Jobs waiting",
+      "description": "Jobs ready to be delivered, retries waiting for their delay included. KEDA scales the workers on this length (LAB-135).",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 9,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_ready{namespace=\"jobs\", queue!~\".+\\\\.dead\"})",
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Jobs in progress",
+      "description": "Jobs delivered to a worker and not yet acknowledged, and the consumers of each queue.",
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 9,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_unacked{namespace=\"jobs\", queue!~\".+\\\\.dead\"})",
+          "legendFormat": "{{queue}}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_consumers{namespace=\"jobs\", queue!~\".+\\\\.dead\"})",
+          "legendFormat": "{{queue}} consumers"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Retries and dead letters",
+      "description": "Jobs delivered again after a failure, and jobs dead-lettered once over the delivery limit.",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(rabbitmq_global_messages_redelivered_total{namespace=\"jobs\"}[$__rate_interval]))",
+          "legendFormat": "redelivered"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(rabbitmq_global_messages_dead_lettered_delivery_limit_total{namespace=\"jobs\"}[$__rate_interval]))",
+          "legendFormat": "dead-lettered after 3 failures"
+        }
+      ]
+    }
+  ]
+}
