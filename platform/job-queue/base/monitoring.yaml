@@ -16,6 +16,12 @@ spec:
         family:
           - queue_coarse_metrics
           - queue_consumer_count
+      # This endpoint also exports rabbitmq_identity_info, already scraped from /metrics: twice the same series breaks
+      # the joins of the RabbitMQ-Overview dashboard (on instance).
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: rabbitmq_detailed_.+
+          action: keep
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule

@@ -8,6 +8,11 @@ spec:
   replicas: 1
   # 4.3 or later: delayed retry of quorum queues (topology.yaml).
   image: rabbitmq:4.3.6-management
+  rabbitmq:
+    # Shovels move the jobs of a dead letter queue back to their queue (runbook jobs-dead-lettered).
+    additionalPlugins:
+      - rabbitmq_shovel
+      - rabbitmq_shovel_management
   secretBackend:
     externalSecret:
       name: rabbitmq-default-user
