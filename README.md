@@ -179,6 +179,18 @@ A model server that restarts in a loop has its own alert, `ModelServerCrashLoopi
 
 Grafana holds the error budget (*SLO / Detail*, *High level Sloth SLOs*) next to the `Gateway` dashboard, and the community dashboards of CloudNativePG and Envoy Gateway at a pinned revision (`scripts/fetch-dashboards.py`).
 
+### The job queue
+
+Long jobs (analysing a Formula 1 season, checking a batch of documents) go through a queue rather than synchronous calls ([ADR-004](docs/adr/004-rabbitmq.md)):
+
+- [`platform/rabbitmq-operator/`](platform/rabbitmq-operator/) installs RabbitMQ's Cluster Operator and Messaging Topology Operator;
+- [`platform/job-queue/`](platform/job-queue/) declares a one-node RabbitMQ 4.3 cluster in the `jobs` namespace, its default user from the store `platform`, and its exchanges, queues, bindings and policy as Kubernetes resources: a new cluster gets the same topology from Git;
+- a job is published to the exchange `jobs` with the routing key `inference` and lands in the quorum queue `jobs.inference`;
+- RabbitMQ handles failures by configuration, without code of ours (policy `jobs-retry`): a job that a worker rejects, or that dies with its worker, comes back after 5 s times its number of failures, and after its third failure it is set aside in `jobs.inference.dead`;
+- the *Job queues* dashboard shows what waits, what runs, what was retried and what failed, next to the *RabbitMQ-Overview* dashboard of the node. A job in a dead letter queue fires `JobsDeadLettered` → [runbook](docs/runbooks/jobs-dead-lettered.md), which replays the jobs with a shovel once the cause is fixed.
+
+`scripts/queue-check.sh`, run by `just test`, fails a job three times as a worker would: the retries come 5 s, then 10 s after the failures, and the job ends in the dead letter queue, where Prometheus sees it.
+
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.

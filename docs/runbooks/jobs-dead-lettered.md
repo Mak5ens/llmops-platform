@@ -17,8 +17,8 @@ rmq() {
 ## 1. Why they failed
 
 ```bash
-rmq list queues                                                                 # how many in each queue
-rmq get messages --queue jobs.inference.dead --count 5 --ack-mode ack_requeue_true   # look without removing them
+kubectl -n jobs exec rabbitmq-server-0 -c rabbitmq -- rabbitmqctl -q list_queues name messages   # how many in each queue
+rmq get messages --queue jobs.inference.dead --count 5 --ack-mode ack_requeue_true                 # look, and leave them
 ```
 
 Each job keeps its body and an `x-death` header: the queue it came from, the reason (`delivery_limit`), and how many times it died.
@@ -37,8 +37,8 @@ Once the cause is fixed, a shovel moves the jobs back to the exchange `jobs` wit
 ```bash
 rmq shovels declare_amqp091 --name replay-inference --source-uri amqp:// --destination-uri amqp:// \
   --source-queue jobs.inference.dead --destination-exchange jobs --predeclared-source --predeclared-destination
-rmq list queues                                 # wait until jobs.inference.dead is at 0
-rmq shovels delete --name replay-inference      # a shovel keeps running until deleted
+kubectl -n jobs exec rabbitmq-server-0 -c rabbitmq -- rabbitmqctl -q list_queues name messages   # until .dead is at 0
+rmq shovels delete --name replay-inference   # a shovel keeps running until deleted
 ```
 
 To drop them instead: `rmq purge queue --name jobs.inference.dead`.

@@ -25,6 +25,8 @@ The failure path of a job queue is where bugs hide; RabbitMQ gives retries and a
 ## Consequences
 
 - Each job queue declares a delivery limit and a dead-letter exchange; a failed job lands in a DLQ that is monitored and can be replayed by hand (LAB-134).
+  As built (`platform/job-queue/`), all of it is one policy: delivery limit 2, so a job is dead-lettered at its third failure; at-least-once dead lettering, which needs `overflow: reject-publish`; and the delayed retry of RabbitMQ 4.3, 5 s times the number of failures, at most 30 s.
+  A worker fails a job with `basic.reject`: `basic.nack` does not count as a failure since RabbitMQ 4.0, so a job nacked forever would never reach the DLQ.
 - RabbitMQ runs through its Kubernetes operator with persistent volumes, and exports metrics to Prometheus.
 - The platform does not use RabbitMQ for event streaming; if that need appears, Kafka or NATS is evaluated in a new ADR.
 - We revisit this if throughput needs exceed what one small cluster sustains, which is far above the job rates of this platform.

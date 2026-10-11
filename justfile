@@ -80,6 +80,7 @@ test: cluster-check
     scripts/selfheal-check.sh {{context}}
     scripts/gateway-check.sh {{context}}
     scripts/postgres-check.sh {{context}}
+    scripts/queue-check.sh {{context}}
     scripts/restore-check.sh {{context}}
     scripts/observability-check.sh {{context}}
     scripts/slo-check.sh {{context}}
