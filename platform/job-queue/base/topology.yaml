@@ -1,0 +1,101 @@
+# Topology of the job queue. A job is published to the exchange "jobs" with the routing key of its kind (inference
+# for now), and lands in the quorum queue jobs.inference.
+#
+# A failed job is retried, then set aside, by RabbitMQ itself (policy jobs-retry):
+# - a worker that fails a job rejects it (basic.reject with requeue), or dies holding it: its delivery count goes up;
+#   basic.nack does not count, so workers must not use it to fail a job;
+# - the job comes back after 5 s times its delivery count, at most 30 s;
+# - after its third failure (delivery limit 2: the first delivery is not a retry), it is dead-lettered to the exchange
+#   jobs.dead-letter, and lands in jobs.inference.dead, where it waits to be inspected and replayed by hand.
+#
+# Queue arguments cannot change once a queue exists: only the type is set on the queue, everything else is in the
+# policy, which can change at any time.
+apiVersion: rabbitmq.com/v1beta1
+kind: Exchange
+metadata:
+  name: jobs
+spec:
+  name: jobs
+  type: direct
+  durable: true
+  rabbitmqClusterReference:
+    name: rabbitmq
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: jobs-inference
+spec:
+  name: jobs.inference
+  type: quorum
+  durable: true
+  rabbitmqClusterReference:
+    name: rabbitmq
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Binding
+metadata:
+  name: jobs-inference
+spec:
+  source: jobs
+  destination: jobs.inference
+  destinationType: queue
+  routingKey: inference
+  rabbitmqClusterReference:
+    name: rabbitmq
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Policy
+metadata:
+  name: jobs-retry
+spec:
+  name: jobs-retry
+  pattern: ^jobs\.inference$
+  applyTo: quorum_queues
+  definition:
+    delivery-limit: 2
+    delayed-retry-type: failed
+    delayed-retry-min: 5000
+    delayed-retry-max: 30000
+    dead-letter-exchange: jobs.dead-letter
+    # At-least-once dead lettering: a job is removed from jobs.inference only once jobs.inference.dead has it. It
+    # needs reject-publish: when the queue is full, publishers are refused rather than the oldest jobs dropped.
+    dead-letter-strategy: at-least-once
+    overflow: reject-publish
+  rabbitmqClusterReference:
+    name: rabbitmq
+---
+# Dead letters keep their routing key (inference), which routes them to the dead letter queue of their kind.
+apiVersion: rabbitmq.com/v1beta1
+kind: Exchange
+metadata:
+  name: jobs-dead-letter
+spec:
+  name: jobs.dead-letter
+  type: direct
+  durable: true
+  rabbitmqClusterReference:
+    name: rabbitmq
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: jobs-inference-dead
+spec:
+  name: jobs.inference.dead
+  type: quorum
+  durable: true
+  rabbitmqClusterReference:
+    name: rabbitmq
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Binding
+metadata:
+  name: jobs-inference-dead
+spec:
+  source: jobs.dead-letter
+  destination: jobs.inference.dead
+  destinationType: queue
+  routingKey: inference
+  rabbitmqClusterReference:
+    name: rabbitmq

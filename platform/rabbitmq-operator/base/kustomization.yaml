@@ -1,0 +1,8 @@
+# RabbitMQ's operators (ADR-004): the Cluster Operator runs RabbitMQ clusters declared as RabbitmqCluster, and the
+# Messaging Topology Operator declares their exchanges, queues, bindings and policies from Kubernetes resources. Both
+# webhooks get their certificates from cert-manager.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/rabbitmq/cluster-operator/releases/download/v2.23.0/cluster-operator.yml
+  - topology-operator
