@@ -5,7 +5,7 @@
 
 **A production-grade Kubernetes platform for LLM workloads: deployed from Git, observed from the request to the log line, with job workers that scale from zero and a measured cost per team.**
 
-> Status: under construction. Milestone 2 (local cluster, GitOps, observability, SLOs and supply chain) is done; milestone 3 (job queue, autoscaling and inference on Scaleway) is under way. See the [roadmap](#roadmap).
+> Status: under construction. Milestone 2 (local cluster, GitOps, observability, SLOs, supply chain and article 2) is done; milestone 3 (job queue, autoscaling and inference on Scaleway) is under way. See the [roadmap](#roadmap).
 
 ## Why
 
@@ -225,7 +225,7 @@ just lint
 
 - [x] **2.1 Local cluster and GitOps**: k3d, ArgoCD app of apps, Envoy Gateway, cert-manager, CloudNativePG, External Secrets. The block 1 gateway deployed from Git.
 - [x] **2.2 Observability, SLO and supply chain**: Prometheus, Loki, Tempo, OpenTelemetry. Two Sloth SLOs with alerts and runbooks. Trivy, Syft, cosign in CI; Renovate, and releases of the gateway deployed through its PRs.
-- [ ] **2.3 ArgoCD decision and article 2**: [ADR-008](docs/adr/008-argocd.md) is written, the article is next. The cloud cluster on Scaleway Kapsule was dropped on 2026-10-11: it would show nothing the k3d cluster and its CI do not already show ([ADR-002](docs/adr/002-scaleway.md), update).
+- [x] **2.3 ArgoCD decision and article 2**: [ADR-008](docs/adr/008-argocd.md) and [article 2](https://maxence-labbe.fr/en/articles/kubernetes-platform-gitops/). The cloud cluster on Scaleway Kapsule was dropped on 2026-10-11: it would show nothing the k3d cluster and its CI do not already show ([ADR-002](docs/adr/002-scaleway.md), update).
 
 ### Milestone 3: jobs, autoscaling and inference
 
@@ -245,7 +245,7 @@ This repo hosts the **cross-cutting ADRs** for the whole platform in [`docs/adr/
 | **llmops-platform** (this repo) | Block 2: Kubernetes in GitOps, job queue and autoscaling, observability, costs |
 | [f1-strategy-analyst](https://github.com/Mak5ens/f1-strategy-analyst) | Block 3: first tenant, an agent with RAG and an evaluation CI |
 
-Write-ups coming on [maxence-labbe.fr](https://maxence-labbe.fr): article 2, *Une plateforme Kubernetes de A à Z en GitOps*, then article 3 on autoscaling and the cost of a Formula 1 season.
+Write-ups on [maxence-labbe.fr](https://maxence-labbe.fr): article 2, [*A Kubernetes platform from scratch in GitOps*](https://maxence-labbe.fr/en/articles/kubernetes-platform-gitops/) ([in French](https://maxence-labbe.fr/articles/plateforme-kubernetes-gitops/)). Article 3, on autoscaling and the cost of a Formula 1 season, comes with milestone 3.
 
 ## License
 
