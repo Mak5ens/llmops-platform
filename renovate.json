@@ -35,6 +35,17 @@
     },
     {
       "customType": "regex",
+      "description": "KEDA's manifest has its version in the file name too",
+      "managerFilePatterns": ["/^platform/keda/base/kustomization\\.yaml$/"],
+      "matchStrings": [
+        "https://github\\.com/(?<depName>kedacore/keda)/releases/download/v(?<currentValue>[0-9.]+)/keda-[0-9.]+\\.yaml"
+      ],
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "autoReplaceStringTemplate": "https://github.com/{{{depName}}}/releases/download/v{{{newValue}}}/keda-{{{newValue}}}.yaml"
+    },
+    {
+      "customType": "regex",
       "description": "Sloth's image in the script that generates the SLO rules",
       "managerFilePatterns": ["/^scripts/slo-generate\\.sh$/"],
       "matchStrings": ["image=(?<depName>ghcr\\.io/slok/sloth):(?<currentValue>v[0-9.]+)"],
