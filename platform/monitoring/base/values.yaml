@@ -2,7 +2,7 @@
 # platform): short retention, requests and limits on every pod.
 fullnameOverride: kps
 
-# The control plane is not reachable on k3s (embedded in one binary) nor on Kapsule (managed): no scraping, and no
+# The control plane is not reachable on k3s (embedded in one binary) nor on a managed cluster: no scraping, and no
 # rules that would fire because their targets are missing.
 kubeControllerManager:
   enabled: false

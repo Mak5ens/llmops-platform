@@ -1,6 +1,6 @@
 # ADR-003: Terraform rather than OpenTofu
 
-- **Status:** Accepted
+- **Status:** On hold since 2026-10-11: no cloud resource to provision (ADR-002, update)
 - **Date:** 2026-09-28
 
 ## Context

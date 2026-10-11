@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install ArgoCD on a cluster and hand it the root Application: from then on, everything
-# on the cluster comes from Git. Runs on any cluster (k3d, minikube, k3s, Kapsule).
-# Usage: scripts/bootstrap.sh <kube context> <env: local|cloud> <git revision>
+# on the cluster comes from Git. Runs on any cluster (k3d, minikube, k3s).
+# Usage: scripts/bootstrap.sh <kube context> <env: local> <git revision>
 # The revision must be pushed: ArgoCD reads the repo from GitHub, not from this machine.
 set -euo pipefail
 

@@ -1,6 +1,6 @@
 # ADR-002: Scaleway rather than OVHcloud
 
-- **Status:** Accepted
+- **Status:** Accepted, amended on 2026-10-11 (see the update at the end)
 - **Date:** 2026-09-28
 
 ## Context
@@ -28,3 +28,10 @@ Prices are close between the two French providers, so the decision rests on the 
 - A GPU session of a few hours costs a few euros: the budget of block 2 is dominated by the time GPUs stay up, which the runbooks keep short.
 - The cluster uses a small set of zones; multi-region resilience is out of scope.
 - We revisit this if a need for SecNumCloud qualification appears, or if the L4 is no longer available at a similar price, in favor of OVHcloud.
+
+## Update, 2026-10-11
+
+The managed cluster is dropped: LAB-131 (Terraform) is on hold and LAB-132 (Kapsule) is cancelled.
+Operating a managed cluster would show nothing the k3d cluster, which runs the same manifests and the same tests in the CI, does not already show, and its author already runs a production cluster elsewhere.
+Scaleway stays the provider for what cannot run on a laptop, the models: they are served by Scaleway Generative APIs, serverless and billed per token, in Paris (LAB-137, ADR-027). The GDPR argument of this ADR holds, and there is no GPU to start and stop.
+The mentions of Kapsule in ADR-017, ADR-019 and ADR-020 describe the plan at the time they were written.

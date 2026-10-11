@@ -48,7 +48,7 @@ components:
   - name: otel-collector
     namespace: monitoring
     wave: -1
-  # Local S3 for backups; Scaleway Object Storage in the cloud.
+  # Local S3: PostgreSQL backups, Langfuse's events and media.
   - name: object-storage
     namespace: object-storage
     wave: -2
