@@ -29,6 +29,6 @@ configMapGenerator:
 # scripts/gateway-release.sh checks that config/ matches the release.
 images:
   - name: ghcr.io/mak5ens/llmops-gateway/litellm
-    newTag: 0.2.0
+    newTag: 0.2.1
   - name: ghcr.io/mak5ens/llmops-gateway/presidio-analyzer
-    newTag: 0.2.0
+    newTag: 0.2.1
