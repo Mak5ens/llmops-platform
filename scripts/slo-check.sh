@@ -58,7 +58,20 @@ for _ in $(seq 120); do
   [[ -n $result ]] && break
   sleep 5
 done
-[[ -n $result ]] || { echo "$alert did not fire within 10 minutes" >&2; exit 1; }
+if [[ -z $result ]]; then
+  # What Prometheus saw, so that a failure in the CI can be understood: the error ratio of the SLI per window (the page
+  # needs more than 7.2 % over both 5 min and 1 h), the requests Envoy traced, and the state of the alert.
+  echo "$alert did not fire within 10 minutes. Prometheus:" >&2
+  for query in 'slo:sli_error:ratio_rate5m{sloth_slo="availability"}' 'slo:sli_error:ratio_rate1h{sloth_slo="availability"}' \
+    'sum by (status_code) (increase(traces_spanmetrics_calls_total{service="platform.gateway"}[10m]))' \
+    "ALERTS{alertname=\"$alert\"}"; do
+    "${kc[@]}" get --raw "/api/v1/namespaces/monitoring/services/kps-prometheus:9090/proxy/api/v1/query?query=$(
+      python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$query")" \
+      | python3 -c 'import json, sys; print(sys.argv[1], [(r["metric"], r["value"][1]) for r in json.load(sys.stdin)["data"]["result"]])' \
+        "$query" >&2 || true
+  done
+  exit 1
+fi
 read -r slo severity runbook <<<"$result"
 echo "$alert fired after $((SECONDS - start)) s: SLO $slo, $severity, runbook $runbook"
 [[ $runbook == https://* ]] || { echo "The alert has no runbook" >&2; exit 1; }
