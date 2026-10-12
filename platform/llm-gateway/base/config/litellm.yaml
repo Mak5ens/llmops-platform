@@ -4,8 +4,8 @@
 # LiteLLM Proxy configuration. Values written `os.environ/NAME` are read from the container environment.
 # Reference: https://docs.litellm.ai/docs/proxy/configs
 #
-# Callers only know usage aliases (chat-small, chat-large, embed). Which model serves an alias is decided here,
-# so swapping a model is a change to this file and to OLLAMA_MODELS in .env, never to client code.
+# Callers only know usage aliases (chat-small, chat-large, embed, rerank). Which model serves an alias is decided
+# here, so swapping a model is a change to this file and to OLLAMA_MODELS in .env, never to client code.
 #
 # input_cost_per_token and output_cost_per_token are internal prices, in dollars: LiteLLM knows no price for
 # Ollama models, so without them every team spends $0 and budgets never trigger.
@@ -41,6 +41,19 @@ model_list:
       api_base: http://ollama:11434
       timeout: 30
       input_cost_per_token: 0.00000002
+
+  # Cross-encoder for the RAG of client apps, on LiteLLM's /rerank endpoint: rereads the candidates of a search and
+  # scores each against the question. Served by TEI (`reranker` in compose.yaml): a light multilingual model on CPU,
+  # bge-reranker-v2-m3 on a GPU (compose.gpu.yaml, and the cluster). The model name is the server's, not a model's,
+  # since it depends on the hardware. Priced per query, like hosted rerankers (ADR-014).
+  - model_name: rerank
+    litellm_params:
+      model: huggingface/tei-reranker
+      api_base: http://reranker:80
+      timeout: 60
+      # $1 per 1,000 queries, half of Cohere's hosted reranker. Counted only thanks to a fix of LiteLLM, applied
+      # when the image is built (docker/litellm/patch_litellm.py): released LiteLLM prices any TEI model at $0.
+      input_cost_per_query: 0.001
 
 router_settings:
   # One retry on the same alias by default, then the fallback chain.

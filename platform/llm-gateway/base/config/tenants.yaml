@@ -18,10 +18,10 @@
 # Applied by scripts/bootstrap_langfuse.py. Secrets (secret key, password) come from .env.
 
 teams:
-  # F1 strategy analyst: an agent with RAG over race data, so it needs chat and embeddings.
+  # F1 strategy analyst: an agent with RAG over race data and the FIA rules: chat, embeddings and reranking.
   - team_id: f1
     team_alias: F1 strategy analyst
-    models: [chat-small, chat-large, embed]
+    models: [chat-small, chat-large, embed, rerank]
     max_budget: 10
     budget_duration: 30d
     # Race data holds no personal data; masking stays available per request.

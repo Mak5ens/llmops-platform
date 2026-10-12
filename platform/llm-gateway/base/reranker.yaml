@@ -1,0 +1,81 @@
+# Serves rerank (LAB-184 in llmops-gateway): Text Embeddings Inference with the light multilingual cross-encoder of
+# its compose.yaml, on CPU, with the same settings. The cluster has no GPU, so bge-reranker-v2-m3 (compose.gpu.yaml)
+# is not an option here.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reranker
+spec:
+  replicas: 1
+  # One volume, mounted by one pod at a time.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reranker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: reranker
+    spec:
+      containers:
+        - name: reranker
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4
+          args:
+            - --model-id=cross-encoder/mmarco-mMiniLMv2-L12-H384-v1
+            - --revision=1427fd652930e4ba29e8149678df786c240d8825
+            # Small batches and two tokenizers: 1.4 GiB of RAM instead of 7 GiB with TEI's defaults.
+            - --max-batch-tokens=2048
+            - --tokenization-workers=2
+            # A RAG reranks 50 candidates in one call.
+            - --max-client-batch-size=64
+          ports:
+            - name: http
+              containerPort: 80
+          # The model is downloaded on first start (about 500 MB).
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: models
+              mountPath: /data
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: reranker-models
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: reranker-models
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reranker
+spec:
+  selector:
+    app.kubernetes.io/name: reranker
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
