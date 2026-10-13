@@ -4,8 +4,9 @@
 # LiteLLM Proxy configuration. Values written `os.environ/NAME` are read from the container environment.
 # Reference: https://docs.litellm.ai/docs/proxy/configs
 #
-# Callers only know usage aliases (chat-small, chat-large, embed, rerank). Which model serves an alias is decided
-# here, so swapping a model is a change to this file and to OLLAMA_MODELS in .env, never to client code.
+# Callers only know usage aliases (chat-small, chat-medium, chat-large, chat-pro, embed, rerank). Which model serves
+# an alias is decided here, so swapping a model is a change to this file and to OLLAMA_MODELS in .env, never to
+# client code.
 #
 # input_cost_per_token and output_cost_per_token are internal prices, in dollars: LiteLLM knows no price for
 # Ollama models, so without them every team spends $0 and budgets never trigger.
@@ -34,6 +35,29 @@ model_list:
       # The fallback is the retry: retrying a server that did not answer doubles the wait before chat-small.
       num_retries: 0
 
+  # Local model for agents: follows a JSON schema, writes French, 32k tokens of context. The dev machine's GPU
+  # serves it (compose.gpu.yaml); on CPU, 60 s leave room for a short answer only.
+  - model_name: chat-medium
+    litellm_params:
+      model: ollama_chat/qwen2.5:7b
+      api_base: http://ollama-medium:11434
+      timeout: 60
+      input_cost_per_token: 0.000001
+      output_cost_per_token: 0.000004
+
+  # Commercial model, for evaluation runs and demos: Mistral Small 3.2 (24 B) on Scaleway Generative APIs, in Paris.
+  # Billed by Scaleway at its public price, and capped by the provider budget of router_settings. Personal data is
+  # masked before it leaves the gateway (pii-fr), as for every alias.
+  - model_name: chat-pro
+    litellm_params:
+      model: scaleway/mistral-small-3.2-24b-instruct-2506
+      api_base: os.environ/SCW_GENERATIVE_APIS_BASE_URL
+      api_key: os.environ/SCW_SECRET_KEY
+      timeout: 60
+      # Scaleway's price in euros per token, counted as dollars: within 10% of the bill, on the safe side.
+      input_cost_per_token: 0.00000015
+      output_cost_per_token: 0.00000035
+
   # Multilingual embeddings (French included), 768 dimensions.
   - model_name: embed
     litellm_params:
@@ -61,6 +85,18 @@ router_settings:
   retry_after: 1
   fallbacks:
     - chat-large: [chat-small]
+  # Monthly cap on what the gateway spends at Scaleway, for every team together. Over it, chat-pro is refused
+  # (no fallback: a caller that asked for the commercial model must know it did not get it); the local aliases go on.
+  # The remaining budget is a Prometheus metric (litellm_provider_remaining_budget_metric) to alert on before the cap.
+  # Per-team or per-key model budgets are LiteLLM Enterprise features; only the f1 team can call chat-pro today.
+  provider_budget_config:
+    scaleway:
+      budget_limit: 5
+      time_period: 30d
+  # The spend counted against that cap lives in Redis, so a restart of LiteLLM does not reset it.
+  redis_host: os.environ/REDIS_HOST
+  redis_port: os.environ/REDIS_PORT
+  redis_password: os.environ/REDIS_PASSWORD
 
 # French personal data is replaced with numbered markers (<PERSON_1>, <IBAN_CODE_2>...) before the model sees it,
 # and the markers in the answer are replaced back with the real values (output_parse_pii).
@@ -114,8 +150,9 @@ general_settings:
 litellm_settings:
   # Every call, success or failure, is traced to Langfuse over OTLP (Langfuse v4 takes nothing else). The keys in the
   # environment point to the Gateway project; default_team_settings below points a team's calls to the team's own
-  # project. Langfuse prices the tokens with the internal prices above.
-  callbacks: ["langfuse_otel"]
+  # project. Langfuse prices the tokens with the internal prices above. Prometheus metrics (requests, latency,
+  # spend, remaining provider budget) are served on /metrics for the cluster's Prometheus.
+  callbacks: ["langfuse_otel", "prometheus"]
   # The Langfuse project of each client team of config/tenants.yaml, where LiteLLM sends the team's traces (ADR-016).
   # Here rather than in the team's metadata: since LiteLLM 1.84, an os.environ/ reference in metadata is no longer
   # resolved, and the secret key would have to be stored in LiteLLM's database. scripts/bootstrap_tenants.py checks
