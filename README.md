@@ -202,13 +202,16 @@ The workers come from llmops-gateway ([`worker/`](https://github.com/Mak5ens/llm
 | Setting | Value | Why |
 | -- | -- | -- |
 | Metric | jobs in `jobs.inference`, waiting or held by a worker | through the management API: counting only the waiting jobs (AMQP) would scale workers down while they still work |
-| Jobs per worker | 4 | each worker runs 2 jobs at a time (`WORKER_CONCURRENCY`) |
+| Jobs per worker | 2 | each worker runs 2 jobs at a time (`WORKER_CONCURRENCY`): no job waits once the workers have caught up |
 | Workers | 0 to 6 | zero while the queue is empty; 6 fit in the CI runner's 16 GB with the rest of the platform |
-| Polling | every 5 s | a job waits at most 5 s before its first worker is asked for |
-| Back to zero | 60 s after the queue empties | |
+| Polling | every 5 s | on top of the 5 to 12 s RabbitMQ's statistics take to count a new job: the first worker is asked for about 10 s after the first job |
+| Fewer workers | 2 min after fewer jobs | the HPA's default of 5 min kept 6 workers for a load that needed 3; 30 s made them flap |
+| Back to zero | 60 s after the queue empties | a burst within the minute finds its workers; 30 s cost it a cold start |
 | Grace period | 150 s | longer than a call to the gateway (120 s), so a scale-down never cuts a job |
 
 `scripts/autoscaling-check.sh`, run by `just test`, publishes 500 simulated jobs of 2 s and deletes a worker halfway. Locally, the first worker is ready 13 s after the first job, 6 workers answer the 500 jobs in 112 s, each exactly once and none dead-lettered, and the workers are back to zero 65 s later.
+
+The values above come from load tests: three k6 scenarios (a ramp, two bursts, a steady load) against five settings, in [`benchmarks/`](benchmarks/README.md), replayed with `just bench-autoscaling`. The first job of a burst is answered 12 to 21 s after its publication whatever the setting, mostly the time RabbitMQ's statistics take to show it to KEDA; the HPA then takes two of its 15 s cycles to reach 6 workers.
 
 ### On minikube or a k3s server
 
@@ -247,7 +250,7 @@ just lint
 
 ### Milestone 3: jobs, autoscaling and inference
 
-- [ ] **3.1 Workers and KEDA autoscaling**: RabbitMQ with retries and a dead letter queue (done), simulated workers, KEDA from 0 to N. k6 load profiles, measured scale-up times.
+- [x] **3.1 Workers and KEDA autoscaling**: RabbitMQ with retries and a dead letter queue, simulated workers, KEDA from 0 to N. k6 load profiles and measured scale-up times, which set KEDA's values ([`benchmarks/`](benchmarks/README.md)).
 - [ ] **3.2 Inference and unit cost**: the gateway's aliases on Scaleway Generative APIs; time to first token, tokens per second and cost per job. One dashboard with queue, replicas, latency and cumulative cost on the same time axis.
 - [ ] **3.3 F1 season benchmark**: analyse every session of a Formula 1 season as jobs, cost per session compared with a commercial API. Article 3.
 

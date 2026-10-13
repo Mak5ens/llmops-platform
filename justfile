@@ -68,6 +68,10 @@ ca-cert ctx=context:
 test-gateway gateway_repo="../llmops-gateway" ctx=context:
     cd {{gateway_repo}} && GATEWAY_STACK=kubernetes KUBE_CONTEXT={{ctx}} uv run pytest tests/integration
 
+# Load benchmark of the workers' autoscaling: a k6 scenario (ramp, spike, soak) per KEDA setting, results in benchmarks/results/ (about 10 min per setting; needs uv)
+bench-autoscaling scenario="spike" *settings="":
+    scripts/bench-autoscaling.sh {{context}} {{scenario}} {{settings}}
+
 # Start the platform locally: k3d cluster, then ArgoCD deploys everything from Git
 up: cluster-up (bootstrap context "local" revision)
 

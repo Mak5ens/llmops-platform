@@ -1,0 +1,32 @@
+{
+  "scenario": "soak",
+  "start": 1791880544523,
+  "published": 721,
+  "answered": 721,
+  "failed": 0,
+  "latency": {
+    "p(95)": 9864,
+    "p(99)": 13439.599999999999,
+    "max": 14745,
+    "count": 721,
+    "min": 1620,
+    "med": 2407
+  },
+  "first": 12704,
+  "publishers": {
+    "soak": {
+      "p(95)": 9864,
+      "p(99)": 13439.599999999999,
+      "max": 14745,
+      "count": 721,
+      "min": 1620,
+      "med": 2407
+    }
+  },
+  "dropped": 0,
+  "setting": "git",
+  "value": 4,
+  "cooldown": 60,
+  "window": 300,
+  "offset": 0.5
+}

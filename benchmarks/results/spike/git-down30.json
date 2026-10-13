@@ -1,0 +1,40 @@
+{
+  "scenario": "spike",
+  "start": 1791878370573,
+  "published": 302,
+  "answered": 302,
+  "failed": 0,
+  "latency": {
+    "p(99)": 50697.33,
+    "max": 51505,
+    "count": 302,
+    "min": 2314,
+    "med": 35086.5,
+    "p(95)": 49273.35
+  },
+  "first": 15391,
+  "publishers": {
+    "first": {
+      "count": 151,
+      "min": 15357,
+      "med": 38463,
+      "p(95)": 50189,
+      "p(99)": 51082.5,
+      "max": 51505
+    },
+    "second": {
+      "p(95)": 44453,
+      "p(99)": 45185,
+      "max": 45794,
+      "count": 151,
+      "min": 2314,
+      "med": 32238
+    }
+  },
+  "dropped": 0,
+  "setting": "git-down30",
+  "value": 4,
+  "cooldown": 60,
+  "window": 30,
+  "offset": 0.6
+}

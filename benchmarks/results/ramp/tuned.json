@@ -1,0 +1,32 @@
+{
+  "scenario": "ramp",
+  "start": 1791881860701,
+  "published": 1080,
+  "answered": 1080,
+  "failed": 0,
+  "latency": {
+    "p(95)": 9249.55,
+    "p(99)": 9680.84,
+    "max": 17732,
+    "count": 1080,
+    "min": 1530,
+    "med": 5429.5
+  },
+  "first": 17732,
+  "publishers": {
+    "ramp": {
+      "max": 17732,
+      "count": 1080,
+      "min": 1530,
+      "med": 5429.5,
+      "p(95)": 9249.55,
+      "p(99)": 9680.84
+    }
+  },
+  "dropped": 0,
+  "setting": "tuned",
+  "value": 2,
+  "cooldown": 60,
+  "window": 120,
+  "offset": 0.5
+}
