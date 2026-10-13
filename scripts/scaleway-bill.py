@@ -70,12 +70,12 @@ def main() -> None:
         return
 
     before, after = json.loads(path.read_text()), bill()
-    # The counters now minus at the snapshot: increase() would miss the first call of every series created since,
-    # since LiteLLM creates a series with its first value. Wrong if LiteLLM restarted in between.
+    # Each series now minus at the snapshot, or all of it if it appeared since (a restart of LiteLLM starts new
+    # series): increase() would miss the first call of every new series, since LiteLLM creates it with its value.
     def since_snapshot(metric: str) -> float:
         series = f'{metric}{{api_provider="scaleway"}}'
         at = int(before["taken_at"])
-        return prometheus(sys.argv[3], f"sum({series}) - (sum({series} @ {at}) or vector(0))")
+        return prometheus(sys.argv[3], f"sum(({series} - {series} @ {at}) or {series})")
 
     gateway = {side: since_snapshot(f"litellm_{side}_tokens_metric_total") for side in ("input", "output")}
     spend = since_snapshot("litellm_spend_metric_total")

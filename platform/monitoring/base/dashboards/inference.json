@@ -330,7 +330,7 @@
     {
       "type": "timeseries",
       "title": "Cumulative cost",
-      "description": "Spend since the start of the time range, per alias, at the prices of config/litellm.yaml: Scaleway's public price in euros for chat-pro, the internal price of ADR-014 for the local aliases. Starts again from zero when LiteLLM restarts.",
+      "description": "Spend since the start of the time range, per alias, at the prices of config/litellm.yaml: Scaleway's public price in euros for chat-pro, the internal price of ADR-014 for the local aliases. Each series counts from the start of the range, or from zero if it appeared since (a restart of LiteLLM, a new team or alias).",
       "gridPos": {
         "x": 0,
         "y": 18,
@@ -355,7 +355,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(sum by (requested_model) (litellm_spend_metric_total{requested_model!=\"None\"}) - (sum by (requested_model) (litellm_spend_metric_total{requested_model!=\"None\"} @ start()) or sum by (requested_model) (litellm_spend_metric_total{requested_model!=\"None\"}) * 0))",
+          "expr": "sum by (requested_model) ((litellm_spend_metric_total{requested_model!=\"None\"} - litellm_spend_metric_total{requested_model!=\"None\"} @ start()) or litellm_spend_metric_total{requested_model!=\"None\"})",
           "legendFormat": "{{requested_model}}"
         }
       ]
@@ -400,7 +400,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(sum by (requested_model) (litellm_spend_metric_total{end_user=\"llmops-worker\"}) - (sum by (requested_model) (litellm_spend_metric_total{end_user=\"llmops-worker\"} @ start()) or sum by (requested_model) (litellm_spend_metric_total{end_user=\"llmops-worker\"}) * 0)) / (sum by (requested_model) (litellm_requests_metric_total{end_user=\"llmops-worker\"}) - (sum by (requested_model) (litellm_requests_metric_total{end_user=\"llmops-worker\"} @ start()) or sum by (requested_model) (litellm_requests_metric_total{end_user=\"llmops-worker\"}) * 0))",
+          "expr": "sum by (requested_model) ((litellm_spend_metric_total{end_user=\"llmops-worker\"} - litellm_spend_metric_total{end_user=\"llmops-worker\"} @ start()) or litellm_spend_metric_total{end_user=\"llmops-worker\"}) / sum by (requested_model) ((litellm_requests_metric_total{end_user=\"llmops-worker\"} - litellm_requests_metric_total{end_user=\"llmops-worker\"} @ start()) or litellm_requests_metric_total{end_user=\"llmops-worker\"})",
           "legendFormat": "{{requested_model}}"
         }
       ]
@@ -445,7 +445,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(sum by (team_alias) (litellm_spend_metric_total{team_alias!=\"None\"}) - (sum by (team_alias) (litellm_spend_metric_total{team_alias!=\"None\"} @ start()) or sum by (team_alias) (litellm_spend_metric_total{team_alias!=\"None\"}) * 0))",
+          "expr": "sum by (team_alias) ((litellm_spend_metric_total{team_alias!=\"None\"} - litellm_spend_metric_total{team_alias!=\"None\"} @ start()) or litellm_spend_metric_total{team_alias!=\"None\"})",
           "legendFormat": "{{team_alias}}"
         }
       ]

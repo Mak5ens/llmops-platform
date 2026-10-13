@@ -27,11 +27,16 @@ spec:
       rules:
         # Cost per job over the last hour, per alias: the spend of the worker's calls (end user llmops-worker, see
         # llmops-gateway's worker) divided by the calls it made, one per job answered. Simulated jobs cost nothing
-        # and make no call.
+        # and make no call. Each series counts from an hour ago, or from zero if it appeared since: LiteLLM creates a
+        # series with its first value, which increase() would miss, and a restart starts new series.
         - record: alias:job_cost_dollars:avg1h
           expr: |
-            sum by (requested_model) (increase(litellm_spend_metric_total{end_user="llmops-worker"}[1h]))
-              / sum by (requested_model) (increase(litellm_requests_metric_total{end_user="llmops-worker"}[1h]))
+            sum by (requested_model) (
+              (litellm_spend_metric_total{end_user="llmops-worker"} - litellm_spend_metric_total{end_user="llmops-worker"} offset 1h)
+              or litellm_spend_metric_total{end_user="llmops-worker"})
+            / sum by (requested_model) (
+              (litellm_requests_metric_total{end_user="llmops-worker"} - litellm_requests_metric_total{end_user="llmops-worker"} offset 1h)
+              or litellm_requests_metric_total{end_user="llmops-worker"})
         - alert: ScalewayErrors
           # More than 5 % of the calls to Scaleway fail (chat-pro): rate limits (429), timeouts, or Scaleway down.
           # chat-pro has no fallback, so its callers get the error.
