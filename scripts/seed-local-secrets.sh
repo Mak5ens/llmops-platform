@@ -59,7 +59,7 @@ seed litellm-redis "REDIS_PASSWORD=$(hex 16)"
 # one, as in the CI, the key is empty: chat-pro fails and its tests are skipped. Rewritten on every run, so a key
 # added to .env reaches the cluster at the next bootstrap (then restart LiteLLM).
 env_file=${SCALEWAY_ENV_FILE:-$(dirname "$0")/../../llmops-gateway/.env}
-scw() { [[ -f $env_file ]] && sed -n "s/^$1=//p" "$env_file" | tail -1 | tr -d '"'; }
+scw() { [[ -f $env_file ]] || return 0; sed -n "s/^$1=//p" "$env_file" | tail -1 | tr -d '"'; }
 scw_key=$(scw SCW_SECRET_KEY)
 scw_url=$(scw SCW_GENERATIVE_APIS_BASE_URL)
 "${kc[@]}" -n local-secrets create secret generic scaleway --dry-run=client -o yaml \
