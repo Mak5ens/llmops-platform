@@ -1,0 +1,32 @@
+{
+  "scenario": "ramp",
+  "start": 1791879830197,
+  "published": 1080,
+  "answered": 1080,
+  "failed": 0,
+  "latency": {
+    "med": 5323,
+    "p(95)": 11540.2,
+    "p(99)": 13226.61,
+    "max": 15243,
+    "count": 1080,
+    "min": 1620
+  },
+  "first": 14992,
+  "publishers": {
+    "ramp": {
+      "min": 1620,
+      "med": 5323,
+      "p(95)": 11540.2,
+      "p(99)": 13226.61,
+      "max": 15243,
+      "count": 1080
+    }
+  },
+  "dropped": 0,
+  "setting": "git-down30",
+  "value": 4,
+  "cooldown": 60,
+  "window": 30,
+  "offset": 0.6
+}

@@ -1,0 +1,40 @@
+{
+  "scenario": "spike",
+  "start": 1791877718260,
+  "published": 302,
+  "answered": 302,
+  "failed": 0,
+  "latency": {
+    "p(95)": 46194.7,
+    "p(99)": 47422.67,
+    "max": 48306,
+    "count": 302,
+    "min": 14693,
+    "med": 33498.5
+  },
+  "first": 15381,
+  "publishers": {
+    "first": {
+      "p(99)": 48256,
+      "max": 48306,
+      "count": 151,
+      "min": 14839,
+      "med": 35180,
+      "p(95)": 47030
+    },
+    "second": {
+      "med": 31851,
+      "p(95)": 40953,
+      "p(99)": 41987,
+      "max": 42223,
+      "count": 151,
+      "min": 14693
+    }
+  },
+  "dropped": 0,
+  "setting": "eager",
+  "value": 2,
+  "cooldown": 30,
+  "window": 300,
+  "offset": 0.6
+}

@@ -1,0 +1,32 @@
+{
+  "scenario": "soak",
+  "start": 1791880241161,
+  "published": 721,
+  "answered": 721,
+  "failed": 0,
+  "latency": {
+    "med": 2388,
+    "p(95)": 14124,
+    "p(99)": 19733.19999999999,
+    "max": 21619,
+    "count": 721,
+    "min": 1549
+  },
+  "first": 15344,
+  "publishers": {
+    "soak": {
+      "med": 2388,
+      "p(95)": 14124,
+      "p(99)": 19733.19999999999,
+      "max": 21619,
+      "count": 721,
+      "min": 1549
+    }
+  },
+  "dropped": 0,
+  "setting": "eager",
+  "value": 2,
+  "cooldown": 30,
+  "window": 300,
+  "offset": 0.5
+}

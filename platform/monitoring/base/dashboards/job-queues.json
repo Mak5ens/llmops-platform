@@ -145,12 +145,57 @@
     },
     {
       "type": "timeseries",
-      "title": "Retries and dead letters",
-      "description": "Jobs delivered again after a failure, and jobs dead-lettered once over the delivery limit.",
+      "title": "Workers",
+      "description": "Workers KEDA asked for and workers ready to take jobs: zero while the queue is empty, one per 2 jobs up to 6 (platform/job-worker, benchmarks/README.md).",
       "gridPos": {
         "x": 0,
         "y": 8,
-        "w": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "custom": {
+            "lineInterpolation": "stepAfter"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(kube_deployment_spec_replicas{namespace=\"jobs\", deployment=\"worker\"})",
+          "legendFormat": "asked for"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(kube_deployment_status_replicas_ready{namespace=\"jobs\", deployment=\"worker\"})",
+          "legendFormat": "ready"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Retries and dead letters",
+      "description": "Jobs delivered again after a failure, and jobs dead-lettered once over the delivery limit.",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
         "h": 8
       },
       "datasource": {

@@ -9,7 +9,7 @@
     "enabled": true
   },
   "kubernetes": {
-    "managerFilePatterns": ["/^platform/.+\\.ya?ml$/"]
+    "managerFilePatterns": ["/^platform/.+\\.ya?ml$/", "/^benchmarks/.+\\.ya?ml$/"]
   },
   "customManagers": [
     {

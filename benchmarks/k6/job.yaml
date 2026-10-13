@@ -1,0 +1,56 @@
+# The k6 run of scripts/bench-autoscaling.sh, in the namespace of the workers: the script and the scenario come from
+# the ConfigMaps bench-k6 and bench-k6-env, which the script creates before each run.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bench-k6
+  namespace: jobs
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bench-k6
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:2.3.0
+          args: [run, --no-color, /scripts/autoscaling.js]
+          env:
+            - name: RABBITMQ_URL
+              value: http://rabbitmq.jobs.svc:15672
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-default-user
+                  key: username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-default-user
+                  key: password
+          # SCENARIO, JOB_SECONDS
+          envFrom:
+            - configMapRef:
+                name: bench-k6-env
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: scripts
+          configMap:
+            name: bench-k6

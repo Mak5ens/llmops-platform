@@ -3,8 +3,11 @@
 # waiting ones).
 #
 # - Zero workers while the queue is empty; the first job starts one (activation at 0).
-# - Then one worker per 4 jobs (2 at a time each), up to 6: the CI runner has 16 GB for the whole platform.
-# - Back to zero 60 s after the queue empties.
+# - Then one worker per 2 jobs, the 2 it runs at a time: no job waits once the workers have caught up. Up to 6: the
+#   CI runner has 16 GB for the whole platform.
+# - Fewer workers 2 min after fewer jobs, rather than the HPA's 5 min, without the flapping of 30 s.
+# - Back to zero 60 s after the queue empties: a burst within the minute finds its workers.
+# The figures behind each value: benchmarks/README.md (LAB-136).
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
 metadata:
@@ -26,6 +29,11 @@ spec:
   maxReplicaCount: 6
   pollingInterval: 5
   cooldownPeriod: 60
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 120
   triggers:
     - type: rabbitmq
       authenticationRef:
@@ -34,4 +42,4 @@ spec:
         protocol: http
         queueName: jobs.inference
         mode: QueueLength
-        value: "4"
+        value: "2"
