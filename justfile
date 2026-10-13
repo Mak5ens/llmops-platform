@@ -72,6 +72,10 @@ test-gateway gateway_repo="../llmops-gateway" ctx=context:
 bench-autoscaling scenario="spike" *settings="":
     scripts/bench-autoscaling.sh {{context}} {{scenario}} {{settings}}
 
+# Latency, throughput and cost of chat-small and chat-pro through the gateway and as queued jobs, in benchmarks/inference/ (chat-pro calls Scaleway, about $0.01; OLLAMA_GPU_URL and OLLAMA_CPU_URL add the real local models)
+bench-inference runs="20":
+    scripts/bench-inference.sh {{context}} {{runs}}
+
 # Start the platform locally: k3d cluster, then ArgoCD deploys everything from Git
 up: cluster-up (bootstrap context "local" revision)
 

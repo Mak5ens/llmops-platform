@@ -253,7 +253,7 @@ just lint
 ### Milestone 3: jobs, autoscaling and inference
 
 - [x] **3.1 Workers and KEDA autoscaling**: RabbitMQ with retries and a dead letter queue, simulated workers, KEDA from 0 to N. k6 load profiles and measured scale-up times, which set KEDA's values ([`benchmarks/`](benchmarks/README.md)).
-- [ ] **3.2 Inference and unit cost**: the gateway's aliases on Scaleway Generative APIs; time to first token, tokens per second and cost per job. One dashboard with queue, replicas, latency and cumulative cost on the same time axis.
+- [ ] **3.2 Inference and unit cost**: commercial models on Scaleway Generative APIs, local ones on Ollama ([ADR-027](docs/adr/027-scaleway-generative-apis.md)); time to first token, tokens per second and cost per call and per job, measured ([`benchmarks/inference/`](benchmarks/inference/README.md)). Next, one dashboard with queue, replicas, latency and cumulative cost on the same time axis.
 - [ ] **3.3 F1 season benchmark**: analyse every session of a Formula 1 season as jobs, cost per session compared with a commercial API. Article 3.
 
 ## Architecture decisions
