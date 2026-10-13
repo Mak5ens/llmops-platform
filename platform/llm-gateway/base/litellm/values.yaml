@@ -14,13 +14,17 @@ proxyConfigMap:
   key: config.yaml
 masterkeySecretName: litellm-env
 masterkeySecretKey: LITELLM_MASTER_KEY
-# LITELLM_MASTER_KEY, LITELLM_SALT_KEY and the Langfuse keys, read by config.yaml as os.environ/...
+# LITELLM_MASTER_KEY, LITELLM_SALT_KEY, the Langfuse keys, REDIS_PASSWORD and the Scaleway settings, read by
+# config.yaml as os.environ/...
 environmentSecrets:
   - litellm-env
 envVars:
   # INFO shows retries, fallbacks and cooldowns in the logs.
   LITELLM_LOG: INFO
   LANGFUSE_HOST: http://langfuse-web.langfuse.svc:3000
+  # The spend of the providers with a budget (router_settings in config.yaml), kept in Redis across restarts.
+  REDIS_HOST: litellm-redis
+  REDIS_PORT: "6379"
 # The litellm-db cluster of CloudNativePG; LiteLLM applies its migrations at startup, as in the compose stack.
 db:
   useExisting: true

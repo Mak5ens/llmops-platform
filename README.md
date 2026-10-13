@@ -121,12 +121,14 @@ Services are exposed through the Gateway API ([ADR-005](docs/adr/005-gateway-api
 
 The gateway of [`llmops-gateway`](https://github.com/Mak5ens/llmops-gateway) runs on the cluster with the same behavior as in its Docker Compose stack, which stays the quickest demo without Kubernetes:
 
-- [`platform/llm-gateway/`](platform/llm-gateway/): LiteLLM from its official Helm chart, on `https://llm.localtest.me`; Presidio Analyzer and Anonymizer; two small Ollama servers until the models move to Scaleway (milestone 3.2); and the `tenants-bootstrap` Job, which ArgoCD runs after every sync to create the client teams, their keys and their Langfuse projects;
+- [`platform/llm-gateway/`](platform/llm-gateway/): LiteLLM from its official Helm chart, on `https://llm.localtest.me`, with its Redis, which counts the spend of `chat-pro` against its monthly cap; Presidio Analyzer and Anonymizer; two small Ollama servers until the models move to Scaleway (milestone 3.2); and the `tenants-bootstrap` Job, which ArgoCD runs after every sync to create the client teams, their keys and their Langfuse projects;
+- the cluster serves `chat-large` and `chat-medium` with `qwen2.5:0.5b` under the names `config/litellm.yaml` gives them, to fit the 16 GB CI runner. The tests only check that `chat-large` answers and falls back; `chat-medium` answers, but no model under 3 B passes its JSON test, so the platform lists it in `STAND_IN_ALIASES` and the gateway's tests skip that one. `chat-pro` calls Scaleway Generative APIs with the key of the store's `scaleway` secret, read from the `.env` of llmops-gateway by `just bootstrap`; the CI has none, and skips its tests;
 - [`platform/langfuse/`](platform/langfuse/): Langfuse from its official chart, on `https://langfuse.localtest.me`, with its database on CloudNativePG, its events and media on SeaweedFS, and a single-node ClickHouse (the chart's needs the ClickHouse operator);
 - the images of our own come from llmops-gateway on GHCR: the French Presidio Analyzer, and LiteLLM with the guardrail class and the bootstrap scripts. `config/litellm.yaml` and `config/tenants.yaml` are copies of llmops-gateway's: the services have the same names as in Compose, so the files are identical. A release of the gateway reaches the cluster through a Renovate PR (see below);
-- every secret (master key, team keys, Langfuse keys and accounts) is written once to `local-secrets` by `just bootstrap`; `just gateway-secrets` prints the ones you need to call the gateway or sign in to Langfuse.
+- every secret (master key, team keys, Langfuse keys and accounts) is written once to `local-secrets` by `just bootstrap`; `just gateway-secrets` prints the ones you need to call the gateway or sign in to Langfuse;
+- Prometheus scrapes LiteLLM's own metrics, and `ScalewayBudgetLow` fires when less than $1 is left of the 30-day cap ([runbook](docs/runbooks/scaleway-budget.md)).
 
-The integration tests of block 1 run unchanged against the cluster, in the CI after `just test` and locally with `just test-gateway`: 46 tests, about 10 minutes, most of it waiting for ArgoCD to put things back after the fallback and leak tests.
+The integration tests of block 1 run unchanged against the cluster, in the CI after `just test` and locally with `just test-gateway`: about 10 minutes, most of it waiting for ArgoCD to put things back after the fallback and leak tests.
 
 Two things the move taught:
 
