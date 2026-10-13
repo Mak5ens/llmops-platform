@@ -13,6 +13,7 @@ This repo holds the **cross-cutting ADRs** of the whole platform. ADRs that only
 | [ADR-005](005-gateway-api-and-envoy-gateway.md) | Gateway API with Envoy Gateway | Accepted |
 | [ADR-006](006-self-hosted-langfuse.md) | Self-hosted Langfuse rather than Langfuse Cloud | Accepted |
 | [ADR-008](008-argocd.md) | Argo CD rather than Flux, with an app of apps | Accepted |
+| [ADR-009](009-keda.md) | KEDA's ScaledObject on the RabbitMQ queue to scale the job workers from zero, rather than an HPA alone | Accepted |
 | [ADR-010](010-multi-repo.md) | Several repos rather than a monorepo | Accepted |
 | [ADR-017](017-local-cluster-k3d.md) | k3d for the local cluster and the CI, with scripts that run on any cluster | Accepted |
 | [ADR-018](018-postgresql-cloudnativepg.md) | PostgreSQL with CloudNativePG, backups to S3, SeaweedFS as the local S3 | Accepted |

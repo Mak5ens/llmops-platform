@@ -198,7 +198,7 @@ Long jobs (analysing a Formula 1 season, checking a batch of documents) go throu
 
 The workers come from llmops-gateway ([`worker/`](https://github.com/Mak5ens/llmops-gateway/tree/main/worker)): they run each job through the gateway with the key of the job's team, reply to its `reply_to`, and give failed jobs back to RabbitMQ. On SIGTERM, a worker finishes the jobs it holds before it exits.
 
-- [`platform/keda/`](platform/keda/) installs KEDA;
+- [`platform/keda/`](platform/keda/) installs KEDA, rather than an HPA alone, whose CPU and memory say nothing of a worker that waits ([ADR-009](docs/adr/009-keda.md));
 - [`platform/job-worker/`](platform/job-worker/) deploys the worker, with the teams' keys from the store `platform`, and its `ScaledObject`, which KEDA turns into replicas.
 
 | Setting | Value | Why |
