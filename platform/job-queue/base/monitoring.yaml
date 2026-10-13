@@ -1,5 +1,5 @@
 # Metrics of RabbitMQ for Prometheus: the node's on /metrics, and the length of each queue on /metrics/detailed (the
-# per-queue families only, as in the operator's example ServiceMonitor).
+# per-queue families only, as in the operator's example ServiceMonitor, plus the deliveries and acknowledgements).
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -16,6 +16,8 @@ spec:
         family:
           - queue_coarse_metrics
           - queue_consumer_count
+          # Acknowledgements per queue: the jobs answered, on the Inference dashboard.
+          - queue_delivery_metrics
       # This endpoint also exports rabbitmq_identity_info, already scraped from /metrics: twice the same series breaks
       # the joins of the RabbitMQ-Overview dashboard (on instance).
       metricRelabelings:
@@ -40,3 +42,20 @@ spec:
             summary: "{{ $value }} failed jobs in {{ $labels.queue }}"
             description: "Jobs failed three times and were set aside in {{ $labels.queue }}."
             runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/jobs-dead-lettered.md
+        - alert: JobsBacklogAtMaxWorkers
+          # The workers are at their maximum (KEDA's ScaledObject) and the jobs waiting still grow: more workers will
+          # not come, so the wait of each new job only gets longer.
+          expr: |
+            sum(rabbitmq_detailed_queue_messages_ready{namespace="jobs", queue="jobs.inference"}) > 0
+            and on ()
+            delta(sum(rabbitmq_detailed_queue_messages_ready{namespace="jobs", queue="jobs.inference"})[10m:1m]) > 0
+            and on ()
+            sum(kube_deployment_status_replicas_ready{namespace="jobs", deployment="worker"})
+              >= max(kube_horizontalpodautoscaler_spec_max_replicas{namespace="jobs", horizontalpodautoscaler="keda-hpa-worker"})
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Jobs pile up in jobs.inference with every worker busy"
+            description: "{{ $value }} jobs wait, more than 10 minutes ago, and the workers are at their maximum."
+            runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/jobs-backlog.md
