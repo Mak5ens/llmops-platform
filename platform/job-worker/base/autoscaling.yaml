@@ -1,0 +1,37 @@
+# KEDA scales the workers on the jobs of jobs.inference, through RabbitMQ's management API: it counts the jobs waiting
+# and those a worker holds, so workers are not scaled down while they still have work (AMQP would only count the
+# waiting ones).
+#
+# - Zero workers while the queue is empty; the first job starts one (activation at 0).
+# - Then one worker per 4 jobs (2 at a time each), up to 6: the CI runner has 16 GB for the whole platform.
+# - Back to zero 60 s after the queue empties.
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: rabbitmq
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: rabbitmq-default-user
+      key: management_uri
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: worker
+spec:
+  scaleTargetRef:
+    name: worker
+  minReplicaCount: 0
+  maxReplicaCount: 6
+  pollingInterval: 5
+  cooldownPeriod: 60
+  triggers:
+    - type: rabbitmq
+      authenticationRef:
+        name: rabbitmq
+      metadata:
+        protocol: http
+        queueName: jobs.inference
+        mode: QueueLength
+        value: "4"

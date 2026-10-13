@@ -1,0 +1,14 @@
+# The job workers (worker/ of llmops-gateway): they consume jobs.inference, call the gateway with the key of each
+# job's team, and reply. KEDA runs them from zero to N on the number of jobs in the queue (LAB-135).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: jobs
+resources:
+  - secrets.yaml
+  - worker.yaml
+  - autoscaling.yaml
+# Built from the same llmops-gateway release as the gateway's images (platform/llm-gateway), and updated with them
+# by Renovate's llmops-gateway group (ADR-023).
+images:
+  - name: ghcr.io/mak5ens/llmops-gateway/worker
+    newTag: 0.3.1

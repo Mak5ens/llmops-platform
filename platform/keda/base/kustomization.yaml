@@ -1,0 +1,6 @@
+# KEDA scales workloads on external metrics, here the job workers on the length of their RabbitMQ queue, from zero
+# (LAB-135). It brings its own certificates for its webhooks and metrics API server.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/kedacore/keda/releases/download/v2.21.0/keda-2.21.0.yaml

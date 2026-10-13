@@ -1,0 +1,52 @@
+# No replicas field: KEDA owns the replica count (autoscaling.yaml), from zero when the queue is empty.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worker
+    spec:
+      # On SIGTERM a worker stops taking jobs and finishes those it holds: the grace period covers the longest call to
+      # the gateway (WORKER_GATEWAY_TIMEOUT), so a scale-down never cuts a job.
+      terminationGracePeriodSeconds: 150
+      containers:
+        - name: worker
+          image: ghcr.io/mak5ens/llmops-gateway/worker
+          env:
+            - name: AMQP_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-default-user
+                  key: uri
+            - name: GATEWAY_URL
+              value: http://litellm.llm-gateway.svc:4000
+            - name: WORKER_CONCURRENCY
+              value: "2"
+            - name: WORKER_GATEWAY_TIMEOUT
+              value: "120"
+            # Simulated jobs (no model call) for the load tests and scripts/autoscaling-check.sh.
+            - name: WORKER_ALLOW_SIMULATION
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.monitoring.svc:4318
+          # TEAM_KEY_F1, TEAM_KEY_MJ...
+          envFrom:
+            - secretRef:
+                name: worker-team-keys
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]

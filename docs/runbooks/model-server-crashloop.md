@@ -14,7 +14,7 @@ kubectl -n llm-gateway logs deployment/ollama -c pull-models --tail=20   # the i
 
 | What you see | Likely cause | Next |
 | -- | -- | -- |
-| `OOMKilled` in *Last State* | the model needs more memory than the limit (2 GiB for `ollama`, 3 GiB for `ollama-large`) | raise the limit in [`platform/llm-gateway/base/ollama.yaml`](../../platform/llm-gateway/base/ollama.yaml), or use a smaller model; change it in Git |
+| `OOMKilled` in *Last State* | the model needs more memory than the limit (2 GiB for each) | raise the limit in [`platform/llm-gateway/base/ollama.yaml`](../../platform/llm-gateway/base/ollama.yaml), or use a smaller model; change it in Git |
 | the init container fails on `ollama pull` | no access to the model registry, or a model name that does not exist | check the network, and the model names against `config/litellm.yaml` |
 | `no space left on device` | the 3 GiB volume is full (a bigger model was added) | raise the PVC size in Git, then delete the pod |
 | the readiness probe fails, no error | the node is short of CPU or memory | `kubectl top nodes`, `kubectl -n llm-gateway top pods` |
