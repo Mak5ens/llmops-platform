@@ -227,6 +227,8 @@ The *Inference* dashboard puts block 2 on one time axis ([`inference.json`](plat
 
 *302 jobs on `chat-pro`, in two bursts of 150, on 2026-10-13.* The six workers came, and the gateway answered 429 to most of their calls: the `f1` team's key allows 60 requests a minute (`config/tenants.yaml`), and twelve jobs at a time ask for more. The worker retried them 5 s and 10 s later, inside the same minute, and 182 jobs went to the dead letter queue after their third failure (`JobsDeadLettered` fired). The 120 jobs answered cost $0.0197 in all, $0.000164 each. The worker should wait for the rate limit to reset rather than spend its attempts: LAB-194.
 
+**The bill agrees.** Over the same peak, LiteLLM counted 55,030 tokens out and 3,144 in for `chat-pro`, $0.0197 at Scaleway's price; Scaleway's billing API showed 56,000 and 4,000, €0.02, 35 minutes after the peak (`scripts/scaleway-bill.py`). Scaleway bills per thousand tokens and rounds each line to the cent: −1.7 % on the output tokens and −1.3 % on the cost are within that rounding, and so are the 856 input tokens of difference. The gateway's count is the one to trust per job; the bill confirms it per batch.
+
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
