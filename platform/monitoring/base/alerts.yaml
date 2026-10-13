@@ -23,6 +23,33 @@ spec:
             summary: "Model server {{ $labels.pod }} restarts in a loop"
             description: "Container {{ $labels.container }} of {{ $labels.pod }} has been in CrashLoopBackOff for 5 minutes."
             runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/model-server-crashloop.md
+    - name: inference
+      rules:
+        # Cost per job over the last hour, per alias: the spend of the worker's calls (end user llmops-worker, see
+        # llmops-gateway's worker) divided by the calls it made, one per job answered. Simulated jobs cost nothing
+        # and make no call. Each series counts from an hour ago, or from zero if it appeared since: LiteLLM creates a
+        # series with its first value, which increase() would miss, and a restart starts new series.
+        - record: alias:job_cost_dollars:avg1h
+          expr: |
+            sum by (requested_model) (
+              (litellm_spend_metric_total{end_user="llmops-worker"} - litellm_spend_metric_total{end_user="llmops-worker"} offset 1h)
+              or litellm_spend_metric_total{end_user="llmops-worker"})
+            / sum by (requested_model) (
+              (litellm_requests_metric_total{end_user="llmops-worker"} - litellm_requests_metric_total{end_user="llmops-worker"} offset 1h)
+              or litellm_requests_metric_total{end_user="llmops-worker"})
+        - alert: ScalewayErrors
+          # More than 5 % of the calls to Scaleway fail (chat-pro): rate limits (429), timeouts, or Scaleway down.
+          # chat-pro has no fallback, so its callers get the error.
+          expr: |
+            sum(rate(litellm_deployment_failure_responses_total{api_provider="scaleway"}[10m]))
+              / sum(rate(litellm_deployment_total_requests_total{api_provider="scaleway"}[10m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value | humanizePercentage }} of the calls to Scaleway fail"
+            description: "The calls of chat-pro to Scaleway Generative APIs fail, by status on the Inference dashboard."
+            runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/scaleway-errors.md
     - name: provider-budgets
       rules:
         - alert: ScalewayBudgetLow

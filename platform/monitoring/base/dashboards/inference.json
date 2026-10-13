@@ -1,0 +1,499 @@
+{
+  "uid": "inference",
+  "title": "Inference",
+  "tags": [
+    "llmops"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 41,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "description": "Block 2 at a glance, on one time axis: the load (queue, workers), what the models do (time to first token, throughput, failures) and what it costs (per alias, per team, per job). LAB-138.",
+  "panels": [
+    {
+      "type": "row",
+      "title": "Load: the queue and the workers",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Jobs in the queue",
+      "description": "Jobs of jobs.inference waiting for a worker and held by one, and jobs set aside after their third failure (runbook jobs-dead-lettered). RabbitMQ refreshes these counts every 5 s.",
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rabbitmq_detailed_queue_messages_ready{queue=\"jobs.inference\", namespace=\"jobs\"})",
+          "legendFormat": "waiting"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rabbitmq_detailed_queue_messages_unacked{queue=\"jobs.inference\", namespace=\"jobs\"})",
+          "legendFormat": "held by a worker"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rabbitmq_detailed_queue_messages{queue=\"jobs.inference.dead\", namespace=\"jobs\"})",
+          "legendFormat": "dead-lettered"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Workers",
+      "description": "Workers KEDA asked for, and ready to take jobs (platform/job-worker, benchmarks/README.md).",
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "custom": {
+            "lineInterpolation": "stepAfter"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(kube_deployment_spec_replicas{namespace=\"jobs\", deployment=\"worker\"})",
+          "legendFormat": "asked for"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(kube_deployment_status_replicas_ready{namespace=\"jobs\", deployment=\"worker\"})",
+          "legendFormat": "ready"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max(kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"jobs\", horizontalpodautoscaler=\"keda-hpa-worker\"})",
+          "legendFormat": "at most"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Jobs answered",
+      "description": "Jobs acknowledged by the workers, per second: each one was answered (simulated jobs of the load tests included).",
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(rabbitmq_detailed_queue_messages_acked_total{queue=\"jobs.inference\", namespace=\"jobs\"}[$__rate_interval]))",
+          "legendFormat": "jobs/s"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Inference: what the models do",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Model latency, p95",
+      "description": "Time of the calls to the model per alias, as LiteLLM measures it: the whole call, and the first token of streamed calls (jobs are not streamed). Dashed: the median of the whole call.",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".* median"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    6,
+                    4
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le, requested_model) (rate(litellm_llm_api_latency_metric_bucket[$__rate_interval])))",
+          "legendFormat": "{{requested_model}} p95"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.5, sum by (le, requested_model) (rate(litellm_llm_api_latency_metric_bucket[$__rate_interval])))",
+          "legendFormat": "{{requested_model}} median"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le, requested_model) (rate(litellm_llm_api_time_to_first_token_metric_bucket[$__rate_interval])))",
+          "legendFormat": "{{requested_model}} first token p95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Tokens per second",
+      "description": "Output tokens per second of each model, from LiteLLM's latency per output token (whole calls).",
+      "gridPos": {
+        "x": 8,
+        "y": 9,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "1 / (sum by (litellm_model_name) (rate(litellm_deployment_latency_per_output_token_sum[$__rate_interval])) / sum by (litellm_model_name) (rate(litellm_deployment_latency_per_output_token_count[$__rate_interval])))",
+          "legendFormat": "{{litellm_model_name}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Calls and failures",
+      "description": "Successful calls per alias, and failed calls to the models by HTTP status (429: a rate limit, of Scaleway for chat-pro).",
+      "gridPos": {
+        "x": 16,
+        "y": 9,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (requested_model) (rate(litellm_requests_metric_total{requested_model!=\"\"}[$__rate_interval]))",
+          "legendFormat": "{{requested_model}}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (api_provider, exception_status) (rate(litellm_deployment_failure_responses_total[$__rate_interval]))",
+          "legendFormat": "failed {{api_provider}} {{exception_status}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Cost: what it costs",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Cumulative cost",
+      "description": "Spend since the start of the time range, per alias, at the prices of config/litellm.yaml: Scaleway's public price in euros for chat-pro, the internal price of ADR-014 for the local aliases. Each series counts from the start of the range, or from zero if it appeared since (a restart of LiteLLM, a new team or alias).",
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (requested_model) ((litellm_spend_metric_total{requested_model!=\"None\"} - litellm_spend_metric_total{requested_model!=\"None\"} @ start()) or litellm_spend_metric_total{requested_model!=\"None\"})",
+          "legendFormat": "{{requested_model}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cost per job",
+      "description": "Spend of the worker's calls (end_user llmops-worker) divided by the jobs they answered, per alias, over the time range. Simulated jobs cost nothing and are not counted.",
+      "gridPos": {
+        "x": 12,
+        "y": 18,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 6
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (requested_model) ((litellm_spend_metric_total{end_user=\"llmops-worker\"} - litellm_spend_metric_total{end_user=\"llmops-worker\"} @ start()) or litellm_spend_metric_total{end_user=\"llmops-worker\"}) / sum by (requested_model) ((litellm_requests_metric_total{end_user=\"llmops-worker\"} - litellm_requests_metric_total{end_user=\"llmops-worker\"} @ start()) or litellm_requests_metric_total{end_user=\"llmops-worker\"})",
+          "legendFormat": "{{requested_model}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Spend per team",
+      "description": "Spend of each team since the start of the time range, every alias together (from LiteLLM's counters, which start again from zero when it restarts).",
+      "gridPos": {
+        "x": 18,
+        "y": 18,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (team_alias) ((litellm_spend_metric_total{team_alias!=\"None\"} - litellm_spend_metric_total{team_alias!=\"None\"} @ start()) or litellm_spend_metric_total{team_alias!=\"None\"})",
+          "legendFormat": "{{team_alias}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Scaleway budget left",
+      "description": "What is left of the gateway's 30-day cap at Scaleway (chat-pro): $5, in fact €5 of Scaleway's bill (ADR-027).",
+      "gridPos": {
+        "x": 18,
+        "y": 22,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "colorMode": "none",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "min(litellm_provider_remaining_budget_metric{api_provider=\"scaleway\"})",
+          "legendFormat": "left"
+        }
+      ]
+    }
+  ]
+}

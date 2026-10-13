@@ -153,6 +153,10 @@ litellm_settings:
   # project. Langfuse prices the tokens with the internal prices above. Prometheus metrics (requests, latency,
   # spend, remaining provider budget) are served on /metrics for the cluster's Prometheus.
   callbacks: ["langfuse_otel", "prometheus"]
+  # The `user` of a request becomes the end_user label of the Prometheus metrics (off by default, for the number of
+  # series). The job worker sends user=llmops-worker, so the cluster tells the spend of jobs from the team's own
+  # calls with the same key. Client apps should not send one id per person there: each value is a new series.
+  enable_end_user_cost_tracking_prometheus_only: true
   # The Langfuse project of each client team of config/tenants.yaml, where LiteLLM sends the team's traces (ADR-016).
   # Here rather than in the team's metadata: since LiteLLM 1.84, an os.environ/ reference in metadata is no longer
   # resolved, and the secret key would have to be stored in LiteLLM's database. scripts/bootstrap_tenants.py checks
