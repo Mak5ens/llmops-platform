@@ -11,6 +11,7 @@ resources:
   - presidio.yaml
   - ollama.yaml
   - redis.yaml
+  - metrics.yaml
   - reranker.yaml
   - tenants-bootstrap.yaml
   - route.yaml

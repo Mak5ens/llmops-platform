@@ -23,3 +23,17 @@ spec:
             summary: "Model server {{ $labels.pod }} restarts in a loop"
             description: "Container {{ $labels.container }} of {{ $labels.pod }} has been in CrashLoopBackOff for 5 minutes."
             runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/model-server-crashloop.md
+    - name: provider-budgets
+      rules:
+        - alert: ScalewayBudgetLow
+          # The gateway caps what it spends at Scaleway (chat-pro) at $5 per 30 days, every team together
+          # (router_settings in config/litellm.yaml). Over the cap, chat-pro is refused, with no fallback. LiteLLM
+          # refreshes the gauge when it routes a call to Scaleway.
+          expr: min(litellm_provider_remaining_budget_metric{api_provider="scaleway"}) < 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Less than $1 left of the gateway's Scaleway budget"
+            description: "{{ $value | printf \"%.2f\" }} $ left of the 30-day cap of chat-pro."
+            runbook_url: https://github.com/Mak5ens/llmops-platform/blob/main/docs/runbooks/scaleway-budget.md

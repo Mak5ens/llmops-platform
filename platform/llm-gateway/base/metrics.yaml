@@ -1,0 +1,21 @@
+# LiteLLM's Prometheus metrics (callback prometheus of config/litellm.yaml): requests, latency and spend per alias
+# and team, and what is left of each provider's budget (alert ScalewayBudgetLow). /metrics/ asks for the master key;
+# the trailing slash avoids a redirect.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: litellm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: litellm
+      app.kubernetes.io/instance: litellm
+  endpoints:
+    - port: http
+      path: /metrics/
+      interval: 30s
+      authorization:
+        type: Bearer
+        credentials:
+          name: litellm-env
+          key: LITELLM_MASTER_KEY
