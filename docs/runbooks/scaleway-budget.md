@@ -21,7 +21,7 @@ In Langfuse, each team's project shows its `chat-pro` calls and their cost (*Tra
 | -- | -- | -- |
 | one team, many calls in a short time | a loop in a client (an agent retrying, a batch run on `chat-pro`) | ask the team to stop it; lower its `max_budget` or remove `chat-pro` from its aliases in `config/tenants.yaml` |
 | the expected traffic, steadily | the cap is too low for the real use | raise `budget_limit` in llmops-gateway's `config/litellm.yaml`, release it, and deploy it here (ADR-023) |
-| the test suite | each run of the integration tests calls Scaleway twice, for a few hundredths of a cent | nothing, unless runs are looping |
+| the test suite | each run of the integration tests calls Scaleway twice, for less than a hundredth of a cent ($0.00008 measured, `benchmarks/inference/`) | nothing, unless runs are looping |
 
 ## 2. Mitigate
 
