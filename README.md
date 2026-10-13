@@ -225,7 +225,11 @@ The *Inference* dashboard puts block 2 on one time axis ([`inference.json`](plat
 
 ![The Inference dashboard during a peak of 302 chat-pro jobs: 120 answered, 182 dead-lettered after 429s](benchmarks/inference/dashboard-peak.png)
 
-*302 jobs on `chat-pro`, in two bursts of 150, on 2026-10-13.* The six workers came, and the gateway answered 429 to most of their calls: the `f1` team's key allows 60 requests a minute (`config/tenants.yaml`), and twelve jobs at a time ask for more. The worker retried them 5 s and 10 s later, inside the same minute, and 182 jobs went to the dead letter queue after their third failure (`JobsDeadLettered` fired). The 120 jobs answered cost $0.0197 in all, $0.000164 each. The worker should wait for the rate limit to reset rather than spend its attempts: LAB-194.
+*302 jobs on `chat-pro`, in two bursts of 150, on 2026-10-13.* The six workers came, and the gateway answered 429 to most of their calls: the `f1` team's key allows 60 requests a minute (`config/tenants.yaml`), and twelve jobs at a time ask for more. The worker retried them 5 s and 10 s later, inside the same minute, and 182 jobs went to the dead letter queue after their third failure (`JobsDeadLettered` fired). The 120 jobs answered cost $0.0197 in all, $0.000164 each. The worker now waits for the rate limit to reset instead (llmops-gateway 0.5.1, LAB-194):
+
+![The same peak with llmops-gateway 0.5.1: 302 jobs answered, none dead-lettered, the 429s absorbed](benchmarks/inference/dashboard-peak-0.5.1.png)
+
+*The same 302 jobs with the worker of 0.5.1.* On a 429, a worker holds its job until the limit resets (the `reset_at` LiteLLM sends, 60 s at most), then gives it back with `basic.nack`, which RabbitMQ does not count as an attempt. The gateway still answers some 429s, but every job is answered and none is dead-lettered: the workers slow down to the team's limit, about 45 jobs a minute. The peak takes 7 minutes instead of 2, a job waits 159 s at the median, and costs the same, $0.000166.
 
 **The bill agrees.** Over the same peak, LiteLLM counted 55,030 tokens out and 3,144 in for `chat-pro`, $0.0197 at Scaleway's price; Scaleway's billing API showed 56,000 and 4,000, €0.02, 35 minutes after the peak (`scripts/scaleway-bill.py`). Scaleway bills per thousand tokens and rounds each line to the cent: −1.7 % on the output tokens and −1.3 % on the cost are within that rounding, and so are the 856 input tokens of difference. The gateway's count is the one to trust per job; the bill confirms it per batch.
 
