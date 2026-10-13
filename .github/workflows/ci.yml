@@ -138,6 +138,23 @@ jobs:
           kubectl --context k3d-llmops get pods -A -o wide
           kubectl --context k3d-llmops get events -A --sort-by=.lastTimestamp | tail -80
           kubectl --context k3d-llmops -n argocd get applications -o yaml
+          # ArgoCD 3 keeps the health of each resource out of the Application: print the conditions of every resource
+          # of an Application that is not healthy, which say why (an operator's resource stuck not Ready).
+          kubectl --context k3d-llmops -n argocd get applications -o json | python3 -c '
+          import json, subprocess, sys
+          for app in json.load(sys.stdin)["items"]:
+              if app["status"].get("health", {}).get("status") in ("Healthy", None) or app["metadata"]["name"] == "root":
+                  continue
+              print("==", app["metadata"]["name"], app["status"]["health"]["status"])
+              for r in app["status"].get("resources", []):
+                  kind = r["kind"] + ("." + r["group"] if r.get("group") else "")
+                  ns = ["-n", r["namespace"]] if r.get("namespace") else []
+                  out = subprocess.run(["kubectl", "--context", "k3d-llmops", "get", kind, r["name"], *ns, "-o", "json"],
+                                       capture_output=True, text=True).stdout
+                  status = json.loads(out).get("status", {}) if out else {}
+                  bad = [c for c in status.get("conditions", []) if c.get("status") != "True"]
+                  if bad:
+                      print(" ", kind, r["name"], json.dumps(bad))'
           kubectl --context k3d-llmops get clusters.postgresql.cnpg.io,backups.postgresql.cnpg.io,externalsecrets -A -o yaml
           kubectl --context k3d-llmops -n llm-gateway logs deployment/litellm --tail=200
           kubectl --context k3d-llmops -n llm-gateway logs job/tenants-bootstrap --tail=100
