@@ -28,7 +28,7 @@
     {
       "type": "timeseries",
       "title": "Jobs in the queue",
-      "description": "Jobs of jobs.inference waiting for a worker, and held by one. RabbitMQ refreshes these counts every 5 s.",
+      "description": "Jobs of jobs.inference waiting for a worker and held by one, and jobs set aside after their third failure (runbook jobs-dead-lettered). RabbitMQ refreshes these counts every 5 s.",
       "gridPos": {
         "x": 0,
         "y": 1,
@@ -63,6 +63,15 @@
           },
           "expr": "sum(rabbitmq_detailed_queue_messages_unacked{queue=\"jobs.inference\", namespace=\"jobs\"})",
           "legendFormat": "held by a worker"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rabbitmq_detailed_queue_messages{queue=\"jobs.inference.dead\", namespace=\"jobs\"})",
+          "legendFormat": "dead-lettered"
         }
       ]
     },
@@ -166,8 +175,8 @@
     },
     {
       "type": "timeseries",
-      "title": "Time to first token, p95",
-      "description": "From the call to the model to its first token, per alias, as LiteLLM measures it (streamed calls). Dashed: the median.",
+      "title": "Model latency, p95",
+      "description": "Time of the calls to the model per alias, as LiteLLM measures it: the whole call, and the first token of streamed calls (jobs are not streamed). Dashed: the median of the whole call.",
       "gridPos": {
         "x": 0,
         "y": 9,
@@ -210,7 +219,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, requested_model) (rate(litellm_llm_api_time_to_first_token_metric_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le, requested_model) (rate(litellm_llm_api_latency_metric_bucket[$__rate_interval])))",
           "legendFormat": "{{requested_model}} p95"
         },
         {
@@ -219,8 +228,17 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.5, sum by (le, requested_model) (rate(litellm_llm_api_time_to_first_token_metric_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le, requested_model) (rate(litellm_llm_api_latency_metric_bucket[$__rate_interval])))",
           "legendFormat": "{{requested_model}} median"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le, requested_model) (rate(litellm_llm_api_time_to_first_token_metric_bucket[$__rate_interval])))",
+          "legendFormat": "{{requested_model}} first token p95"
         }
       ]
     },
@@ -312,7 +330,7 @@
     {
       "type": "timeseries",
       "title": "Cumulative cost",
-      "description": "Spend since the start of the time range, per alias, at the prices of config/litellm.yaml: Scaleway's public price in euros for chat-pro, the internal price of ADR-014 for the local aliases.",
+      "description": "Spend since the start of the time range, per alias, at the prices of config/litellm.yaml: Scaleway's public price in euros for chat-pro, the internal price of ADR-014 for the local aliases. Starts again from zero when LiteLLM restarts.",
       "gridPos": {
         "x": 0,
         "y": 18,
@@ -337,21 +355,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (requested_model) (increase(litellm_spend_metric_total{requested_model!=\"None\"}[$__interval]))",
+          "expr": "(sum by (requested_model) (litellm_spend_metric_total{requested_model!=\"None\"}) - (sum by (requested_model) (litellm_spend_metric_total{requested_model!=\"None\"} @ start()) or sum by (requested_model) (litellm_spend_metric_total{requested_model!=\"None\"}) * 0))",
           "legendFormat": "{{requested_model}}"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "calculateField",
-          "options": {
-            "mode": "cumulativeFunctions",
-            "cumulative": {
-              "field": "",
-              "reducer": "sum"
-            },
-            "replaceFields": true
-          }
         }
       ]
     },
@@ -395,7 +400,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (requested_model) (increase(litellm_spend_metric_total{end_user=\"llmops-worker\"}[$__range])) / sum by (requested_model) (increase(litellm_requests_metric_total{end_user=\"llmops-worker\"}[$__range]))",
+          "expr": "(sum by (requested_model) (litellm_spend_metric_total{end_user=\"llmops-worker\"}) - (sum by (requested_model) (litellm_spend_metric_total{end_user=\"llmops-worker\"} @ start()) or sum by (requested_model) (litellm_spend_metric_total{end_user=\"llmops-worker\"}) * 0)) / (sum by (requested_model) (litellm_requests_metric_total{end_user=\"llmops-worker\"}) - (sum by (requested_model) (litellm_requests_metric_total{end_user=\"llmops-worker\"} @ start()) or sum by (requested_model) (litellm_requests_metric_total{end_user=\"llmops-worker\"}) * 0))",
           "legendFormat": "{{requested_model}}"
         }
       ]
@@ -403,7 +408,7 @@
     {
       "type": "stat",
       "title": "Spend per team",
-      "description": "Spend of each team over the time range, every alias together.",
+      "description": "Spend of each team since the start of the time range, every alias together (from LiteLLM's counters, which start again from zero when it restarts).",
       "gridPos": {
         "x": 18,
         "y": 18,
@@ -440,7 +445,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (team_alias) (increase(litellm_spend_metric_total{team_alias!=\"None\"}[$__range]))",
+          "expr": "(sum by (team_alias) (litellm_spend_metric_total{team_alias!=\"None\"}) - (sum by (team_alias) (litellm_spend_metric_total{team_alias!=\"None\"} @ start()) or sum by (team_alias) (litellm_spend_metric_total{team_alias!=\"None\"}) * 0))",
           "legendFormat": "{{team_alias}}"
         }
       ]

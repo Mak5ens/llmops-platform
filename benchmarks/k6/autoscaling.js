@@ -1,5 +1,5 @@
-// Load scenarios of the job workers (LAB-136). Publishes simulated jobs to the exchange `jobs` through RabbitMQ's
-// management API, collects the workers' replies, and measures how long each job took from its publication to its
+// Load scenarios of the job workers (LAB-136). Publishes jobs, simulated unless JOB_ALIAS is set, to the exchange
+// `jobs` through RabbitMQ's management API, collects the workers' replies, and measures how long each job took from its
 // reply: the time it waited for a worker (scale-up included) plus the time it ran.
 //
 // Run inside the cluster by scripts/bench-autoscaling.sh, which also follows the replica count. SCENARIO picks one of:
@@ -26,6 +26,17 @@ const params = {
 };
 const replies = __ENV.REPLY_QUEUE || 'bench-replies';
 const seconds = Number(__ENV.JOB_SECONDS || 2);
+// With JOB_ALIAS, real jobs instead of simulated ones: each asks the alias a question about Formula 1 strategy, with
+// up to JOB_MAX_TOKENS tokens out (scripts/inference-peak.sh, LAB-138). chat-pro calls Scaleway and costs money.
+const alias = __ENV.JOB_ALIAS;
+const maxTokens = Number(__ENV.JOB_MAX_TOKENS || 512);
+const questions = [
+  "Explique ce qu'est un undercut en Formule 1, avec un exemple chiffré.",
+  'Un pilote a des pneus durs usés de 25 tours et la voiture de sécurité sort. Doit-il s\'arrêter ? Justifie.',
+  'Compare une stratégie à un arrêt et une stratégie à deux arrêts sur un circuit où dépasser est difficile.',
+  "Quelles informations un ingénieur de course surveille-t-il pendant les dix derniers tours d'un Grand Prix ?",
+  'Rédige le briefing de stratégie d\'une course incertaine sous la pluie, en cinq points.',
+];
 const scenario = __ENV.SCENARIO || 'spike';
 
 // A job's latency, from its publication to its reply, in ms.
@@ -111,7 +122,17 @@ export function publish() {
   const body = {
     routing_key: 'inference',
     properties: { reply_to: replies, delivery_mode: 2 },
-    payload: JSON.stringify({ id, team: 'f1', simulate: { seconds } }),
+    payload: JSON.stringify(
+      alias
+        ? {
+            id,
+            team: 'f1',
+            alias,
+            max_tokens: maxTokens,
+            messages: [{ role: 'user', content: questions[exec.scenario.iterationInTest % questions.length] }],
+          }
+        : { id, team: 'f1', simulate: { seconds } },
+    ),
     payload_encoding: 'string',
   };
   const res = http.post(`${api}/api/exchanges/%2F/jobs/publish`, JSON.stringify(body), params);

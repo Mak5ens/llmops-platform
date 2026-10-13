@@ -26,6 +26,7 @@ Then read the logs and traces of the worker at the time of the failures (Grafana
 
 | What you see | Likely cause | Next |
 | -- | -- | -- |
+| `429` in the worker's logs, `Rate limit exceeded for api_key` | the jobs went over the team's requests per minute (`config/tenants.yaml`): the retries come 5 s and 10 s later, inside the same minute (LAB-194) | replay them at a slower pace: fewer workers, or a team limit that fits the batch |
 | every job of a period, whatever its content | the worker or what it calls was down (gateway, model) | fix it, then replay them all (step 2) |
 | always the same kind of job | a job the worker cannot process: bad input, too long for the model | fix the worker or the producer; replay, or purge if the job is invalid |
 | the worker restarts while processing (`OOMKilled`) | the job needs more memory than the worker's limit | raise the limit in Git, then replay |

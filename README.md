@@ -215,6 +215,18 @@ The workers come from llmops-gateway ([`worker/`](https://github.com/Mak5ens/llm
 
 The values above come from load tests: three k6 scenarios (a ramp, two bursts, a steady load) against five settings, in [`benchmarks/`](benchmarks/README.md), replayed with `just bench-autoscaling`. The first job of a burst is answered 12 to 21 s after its publication whatever the setting, mostly the time RabbitMQ's statistics take to show it to KEDA; the HPA then takes two of its 15 s cycles to reach 6 workers.
 
+### Inference and unit cost
+
+The *Inference* dashboard puts block 2 on one time axis ([`inference.json`](platform/monitoring/base/dashboards/inference.json)): the load (jobs in the queue, set aside, answered; workers asked for and ready), what the models do (latency per alias, tokens per second, calls and failures by HTTP status) and what it costs (per alias, per team, per job, and what is left of the Scaleway cap). Everything comes from LiteLLM's own Prometheus metrics, RabbitMQ's and kube-state-metrics': no tracing pipeline in between.
+
+- **Cost per job**: the worker calls the gateway as end user `llmops-worker` (llmops-gateway 0.5.0), so its calls stand apart from the team's own, with the same key. Their spend divided by their calls, one per job answered, is the recording rule `alias:job_cost_dollars:avg1h`, and a panel over the dashboard's time range. Simulated jobs make no call and cost nothing.
+- **Alerts**, each with its runbook: `JobsBacklogAtMaxWorkers` when the queue grows for 10 minutes with every worker busy, `ScalewayErrors` when more than 5 % of the calls to Scaleway fail, next to `JobsDeadLettered` and `ScalewayBudgetLow`.
+- `scripts/inference-peak.sh` sends a peak of real jobs (the `spike` scenario of `benchmarks/k6/`, on `chat-pro` by default), and `scripts/scaleway-bill.py` compares what LiteLLM counted with Scaleway's bill over the same time (billing API, a key with `BillingReadOnly`).
+
+![The Inference dashboard during a peak of 302 chat-pro jobs: 120 answered, 182 dead-lettered after 429s](benchmarks/inference/dashboard-peak.png)
+
+*302 jobs on `chat-pro`, in two bursts of 150, on 2026-10-13.* The six workers came, and the gateway answered 429 to most of their calls: the `f1` team's key allows 60 requests a minute (`config/tenants.yaml`), and twelve jobs at a time ask for more. The worker retried them 5 s and 10 s later, inside the same minute, and 182 jobs went to the dead letter queue after their third failure (`JobsDeadLettered` fired). The 120 jobs answered cost $0.0197 in all, $0.000164 each. The worker should wait for the rate limit to reset rather than spend its attempts: LAB-194.
+
 ### On minikube or a k3s server
 
 k3d only creates the cluster ([ADR-017](docs/adr/017-local-cluster-k3d.md)): the bootstrap runs on any cluster, given its kube context.
