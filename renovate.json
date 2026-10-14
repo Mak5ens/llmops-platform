@@ -48,6 +48,14 @@
     },
     {
       "customType": "regex",
+      "description": "Image tags in Helm values whose image name is set by the chart, named by a `# renovate:` comment",
+      "managerFilePatterns": ["/^platform/.+/values\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+tag: \"?(?<currentValue>[^\"\\s]+)\"?"
+      ]
+    },
+    {
+      "customType": "regex",
       "description": "Sloth's image in the script that generates the SLO rules",
       "managerFilePatterns": ["/^scripts/slo-generate\\.sh$/"],
       "matchStrings": ["image=(?<depName>ghcr\\.io/slok/sloth):(?<currentValue>v[0-9.]+)"],
