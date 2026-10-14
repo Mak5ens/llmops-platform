@@ -54,6 +54,11 @@
   ],
   "packageRules": [
     {
+      "description": "The fixtures are pinned on purpose: the vulnerable image proves that the supply-chain gate blocks critical CVEs, and an update would make it clean",
+      "matchFileNames": [".github/fixtures/**"],
+      "enabled": false
+    },
+    {
       "description": "Major versions of the platform's operators and charts need a reading of their upgrade notes",
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
