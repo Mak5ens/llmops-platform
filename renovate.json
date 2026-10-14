@@ -4,6 +4,8 @@
   "extends": ["config:recommended", "helpers:pinGitHubActionDigests", ":semanticCommits"],
   "labels": ["dependencies"],
   "prConcurrentLimit": 5,
+  "timezone": "Europe/Paris",
+  "schedule": ["before 6am on monday"],
   "dependencyDashboard": true,
   "pre-commit": {
     "enabled": true
@@ -54,6 +56,11 @@
   ],
   "packageRules": [
     {
+      "description": "One PR a week for the minor and patch updates, pins and digests. The rules below override it: the releases of llmops-gateway keep their own PR, at any time. Majors keep a PR each",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest", "pinDigest"],
+      "groupName": "weekly updates"
+    },
+    {
       "description": "The fixtures are pinned on purpose: the vulnerable image proves that the supply-chain gate blocks critical CVEs, and an update would make it clean",
       "matchFileNames": [".github/fixtures/**"],
       "enabled": false
@@ -68,6 +75,7 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/mak5ens/llmops-gateway/**"],
       "groupName": "llmops-gateway",
+      "schedule": ["at any time"],
       "prPriority": 10,
       "prConcurrentLimit": 0,
       "prHourlyLimit": 0
