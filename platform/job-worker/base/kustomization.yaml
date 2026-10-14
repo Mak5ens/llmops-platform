@@ -11,4 +11,4 @@ resources:
 # by Renovate's llmops-gateway group (ADR-023).
 images:
   - name: ghcr.io/mak5ens/llmops-gateway/worker
-    newTag: 0.5.3
+    newTag: 0.5.4
