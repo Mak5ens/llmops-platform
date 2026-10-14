@@ -116,7 +116,7 @@ jobs:
           repository: Mak5ens/llmops-gateway
           ref: ${{ steps.gateway.outputs.ref }}
           path: llmops-gateway
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
       - run: uv run pytest tests/integration
         working-directory: llmops-gateway
         env:
