@@ -3,7 +3,9 @@
 # on every sync, so generated values would change each time.
 langfuse:
   image:
-    tag: "4.47.0"
+    # The chart takes the image name from its own values, so Renovate needs the comment to follow the tag.
+    # renovate: datasource=docker depName=docker.langfuse.com/langfuse/langfuse
+    tag: "4.59.0"
     pullPolicy: IfNotPresent
   salt:
     secretKeyRef: {name: langfuse-env, key: SALT}
@@ -38,6 +40,10 @@ langfuse:
       value: Admin
     - name: LANGFUSE_INIT_USER_PASSWORD
       valueFrom: {secretKeyRef: {name: langfuse-env, key: LANGFUSE_ADMIN_PASSWORD}}
+    # API keys checked without roles, Langfuse's default up to 4.59 at least. The tenant bootstrap writes the teams'
+    # keys without a role assignment, which "enforce" would refuse: a new default must not reach us.
+    - name: API_AUTH_MIGRATION
+      value: legacy
   web:
     resources:
       requests: {cpu: 100m, memory: 512Mi}
