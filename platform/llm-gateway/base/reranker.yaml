@@ -29,6 +29,10 @@ spec:
             - --tokenization-workers=2
             # A RAG reranks 50 candidates in one call.
             - --max-client-batch-size=64
+            # The model reads 512 tokens per (question, passage) pair: a longer pair is cut to fit instead of failing
+            # the whole call. TEI's default, written out as in compose.yaml; it needs the LiteLLM image of
+            # llmops-gateway 0.5.5 or later, which stopped sending `truncate: false` (LAB-211 there).
+            - --auto-truncate
           ports:
             - name: http
               containerPort: 80
