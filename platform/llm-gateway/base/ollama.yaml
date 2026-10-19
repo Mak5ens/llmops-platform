@@ -21,7 +21,7 @@ spec:
       initContainers:
         # Downloads the models on first start; later starts only check them.
         - name: pull-models
-          image: ollama/ollama:0.40.4
+          image: ollama/ollama:0.40.6
           command: [sh, -c]
           args:
             - ollama serve & until ollama list >/dev/null 2>&1; do sleep 1; done;
@@ -34,7 +34,7 @@ spec:
               mountPath: /root/.ollama
       containers:
         - name: ollama
-          image: ollama/ollama:0.40.4
+          image: ollama/ollama:0.40.6
           ports:
             - name: http
               containerPort: 11434
@@ -107,7 +107,7 @@ spec:
       initContainers:
         # Downloads the models on first start; later starts only check them.
         - name: pull-models
-          image: ollama/ollama:0.40.4
+          image: ollama/ollama:0.40.6
           command: [sh, -c]
           args:
             - ollama serve & until ollama list >/dev/null 2>&1; do sleep 1; done;
@@ -118,7 +118,7 @@ spec:
               mountPath: /root/.ollama
       containers:
         - name: ollama
-          image: ollama/ollama:0.40.4
+          image: ollama/ollama:0.40.6
           ports:
             - name: http
               containerPort: 11434
