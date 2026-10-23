@@ -4,26 +4,11 @@
 > La connaissance ne vit pas ici : elle vit dans l'espace **mak5ens**, servi par le MCP
 > `lore` (branché par le `.mcp.json` de ce repo). Ce fichier décrit le comportement attendu.
 
-## En attendant QG
-
-Le MCP `lore` n'est pas encore en service et ce repo n'a pas encore de `.mcp.json`. D'ici là,
-le lore se lit dans son clone local, rangé à côté de ce repo : `../mak5ens-lore`
-(`git clone git@github.com:Mak5ens/mak5ens-lore.git` s'il manque). Les tools cités plus bas se traduisent ainsi :
-
-- `read_file("<chemin>")` : lire `../mak5ens-lore/<chemin>` ;
-- `list_tasks(repo: "llmops-platform")` : lire `repos/llmops-platform/todo.md` ; `start_task` : déplacer la
-  ligne dans « En cours » ;
-- `search("<nom>")` : `grep -r` dans le clone ;
-- `create_task`, `open_debt`, `create_adr`, `edit_file` : écrire le fichier à la main d'après
-  le `_template.md` du dossier, puis commiter et pousser le lore (`docs: …`).
-
-Cette section disparaît quand QG est déployé.
-
 ## Brancher le MCP
 
 Ce repo versionne un `.mcp.json` qui pointe sur l'espace **mak5ens** et rien d'autre. Une
-seule chose à faire par poste : exporter `LORE_TOKEN` (jeton `lore_` créé dans Paramètres →
-Jetons). Ne pas ajouter d'autre serveur `lore` au niveau utilisateur.
+seule chose à faire par poste : exporter `LORE_TOKEN` (jeton `lore_` créé sur
+https://qg.labbtech.fr, page Jetons et MCP). Ne pas ajouter d'autre serveur `lore` au niveau utilisateur.
 
 Cursor / Codex : même URL, même en-tête, dans leur fichier de configuration de projet.
 
