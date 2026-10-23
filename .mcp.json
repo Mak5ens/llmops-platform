@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "lore": {
+      "type": "http",
+      "url": "https://qg.labbtech.fr/mcp/mak5ens",
+      "headers": { "Authorization": "Bearer ${LORE_TOKEN}" }
+    }
+  }
+}
