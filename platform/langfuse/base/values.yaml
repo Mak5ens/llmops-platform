@@ -5,7 +5,7 @@ langfuse:
   image:
     # The chart takes the image name from its own values, so Renovate needs the comment to follow the tag.
     # renovate: datasource=docker depName=docker.langfuse.com/langfuse/langfuse
-    tag: "4.63.0"
+    tag: "4.72.0"
     pullPolicy: IfNotPresent
   salt:
     secretKeyRef: {name: langfuse-env, key: SALT}
