@@ -3,4 +3,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   # Upstream manifests of the pinned version: controller, Gateway API CRDs v1.6.1 and Envoy Gateway's own CRDs.
-  - https://github.com/envoyproxy/gateway/releases/download/v1.9.2/install.yaml
+  - https://github.com/envoyproxy/gateway/releases/download/v1.9.3/install.yaml
