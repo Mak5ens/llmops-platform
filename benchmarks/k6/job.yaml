@@ -16,7 +16,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: k6
-          image: grafana/k6:2.3.0
+          image: grafana/k6:2.4.0
           args: [run, --no-color, /scripts/autoscaling.js]
           env:
             - name: RABBITMQ_URL
