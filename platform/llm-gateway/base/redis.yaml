@@ -24,7 +24,7 @@ spec:
         fsGroup: 999
       containers:
         - name: redis
-          image: redis:7.4.11-alpine
+          image: redis:7.4.12-alpine
           args: [--requirepass, $(REDIS_PASSWORD), --appendonly, "yes"]
           env:
             - name: REDIS_PASSWORD
